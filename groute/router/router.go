@@ -186,6 +186,10 @@ func (r defaultRouter) handleRoute(rt Route) {
 		p = fmt.Sprintf("%s/", p)
 	}
 
+	if strings.HasSuffix(p, "...}/") {
+		p = strings.TrimSuffix(p, "/")
+	}
+
 	r.routes[p] = rt
 	r.mux.Handle(p, rt.Handler)
 }
@@ -198,19 +202,6 @@ func (r *defaultRouter) parsePattern(pattern string) (method, host, p string) {
 	ps := strings.Split(pattern, "/")
 
 	p = path.Join("/", strings.Join(ps[1:], "/"))
-
-	// path.Join adds a trailing slash, if the original pattern doesn't has one, the parsed
-	// path shouldn't also
-	if !strings.HasSuffix(pattern, "/") {
-		p = strings.TrimSuffix(p, "/")
-	}
-
-	// Since path.Join adds a trailing slash, it can break the {pattern...} syntax.
-	// So we check if it has the suffix "...}/" to see if it ends in "/{pattern...}/"
-	if strings.HasSuffix(p, "...}/") {
-		// If it does, we remove the any possible trailing slash
-		p = strings.TrimSuffix(p, "/")
-	}
 
 	// If "[METHOD ][HOST]" is empty, we just have the path and can send it back
 	if ps[0] == "" {
