@@ -19,13 +19,13 @@ const (
 
 type RouteError struct {
 	StatusCode int            `json:"status_code"`
-	Error      string         `json:"error"`
+	Err        string         `json:"error"`
 	Info       map[string]any `json:"info"`
 	Endpoint   string
 }
 
 func NewRouteError(status int, error string, info ...map[string]any) RouteError {
-	rerr := RouteError{StatusCode: status, Error: error}
+	rerr := RouteError{StatusCode: status, Err: error}
 	if len(info) > 0 {
 		rerr.Info = info[0]
 	} else {
@@ -34,13 +34,17 @@ func NewRouteError(status int, error string, info ...map[string]any) RouteError 
 	return rerr
 }
 
+func (rerr RouteError) Error() string {
+	return fmt.Sprintf("route error %d %s: %v", rerr.StatusCode, rerr.Endpoint, rerr.Info)
+}
+
 func (rerr RouteError) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if rerr.StatusCode == 0 {
 		rerr.StatusCode = http.StatusNotImplemented
 	}
 
-	if rerr.Error == "" {
-		rerr.Error = "MISSING ERROR DESCRIPTION"
+	if rerr.Err == "" {
+		rerr.Err = "MISSING ERROR DESCRIPTION"
 	}
 
 	if rerr.Info == nil {
@@ -51,7 +55,7 @@ func (rerr RouteError) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		j, _ = json.Marshal(RouteError{
 			StatusCode: http.StatusInternalServerError,
-			Error:      "Failed to marshal error message to JSON",
+			Err:        "Failed to marshal error message to JSON",
 			Info: map[string]any{
 				"source_value": fmt.Sprintf("%#v", rerr),
 				"error":        err.Error(),
