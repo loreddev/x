@@ -96,6 +96,7 @@ func (c *client) get(path string) (body []byte, res *http.Response, err error) {
 	if err != nil {
 		return nil, nil, errors.Join(errors.New("failed to request"), err)
 	}
+	defer res.Body.Close()
 
 	data, err := statusCodeToErr(res)
 	if err != nil {
