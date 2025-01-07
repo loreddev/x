@@ -1,4 +1,4 @@
-// By contributing to or using this source code, you agree with the terms of the
+// By contributing to, or using this source code, you agree with the terms of the
 // MIT-style licensed that can be found below:
 //
 // Copyright (c) 2025-present Gustavo "Guz" L. de Mello
@@ -24,7 +24,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package forgejo
+package gitea
 
 import (
 	"encoding/json"
