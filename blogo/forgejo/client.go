@@ -1,14 +1,8 @@
-package forgejo
-
-// Contents of this file are heavily sourced from the official Gitea SDK for Go,
-// (available at https://gitea.com/gitea/go-sdk). These contents are licensed under
-// the terms of the MIT license, which a copy can be found at https://opensource.org/license/mit,
-// https://spdx.org/licenses/MIT.html, and stated below:
+// By contributing to or using this source code, you agree with the terms of the
+// MIT-style licensed that can be found below:
 //
-// --- Start of MIT license ---
-//
-// Copyright (c) 2025 Gustavo "Guz" L. de Mello
-// Copyright (c) 2025 Lored.dev
+// Copyright (c) 2025-present Gustavo "Guz" L. de Mello
+// Copyright (c) 2025-present The Lored.dev Contributors
 // Copyright (c) 2016 The Gitea Authors
 // Copyright (c) 2014 The Gogs Authors
 //
@@ -29,11 +23,8 @@ package forgejo
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-//
-// --- End of MIT license ---
-//
-// By contributing to this file, you agree with the terms listed in this file's
-// License.
+
+package forgejo
 
 import (
 	"encoding/json"

@@ -6,7 +6,7 @@
 ## License
 
 &copy; 2025-present Gustavo "Guz" L de Mello
-&copy; 2025-present Lored.dev
+&copy; 2025-present The Lored.dev Contributors
 
 Licensed under the Apache License, Version 2.0 (the "License"), unless otherwise
 explicitly noted. You may obtain a copy of the License at [LICENSE](./LICENSE) or
