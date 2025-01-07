@@ -24,6 +24,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+// Sections of the contents of this file were sourced from the official Gitea SDK for Go,
+// which can be found at https://gitea.com/gitea/go-sdk and is licensed under a MIT-style
+// licensed stated at the start of this file.
+
 package gitea
 
 import (
