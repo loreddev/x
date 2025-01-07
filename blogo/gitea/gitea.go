@@ -9,7 +9,7 @@ import (
 	"forge.capytal.company/loreddev/x/blogo"
 )
 
-const pluginName = "blogo-forgejo"
+const pluginName = "blogo-gitea"
 
 type plugin struct {
 	client *client
