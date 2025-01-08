@@ -31,6 +31,7 @@
 package gitea
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
