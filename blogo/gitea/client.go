@@ -37,6 +37,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 type client struct {
@@ -88,6 +89,25 @@ func (c *client) ListContents(
 	}
 
 	return directory, res, nil
+}
+
+func (c *client) GetSingleCommit(user, repo, commitID string) (*commit, *http.Response, error) {
+	data, res, err := c.get(
+		fmt.Sprintf("/repos/%s/%s/git/commits/%s", user, repo, commitID),
+	)
+	if err != nil {
+		return &commit{}, res, err
+	}
+
+	var commit *commit
+	if err := json.Unmarshal(data, commit); err != nil {
+		return commit, res, errors.Join(
+			errors.New("failed to parse JSON response from API"),
+			err,
+		)
+	}
+
+	return commit, res, err
 }
 
 func (c *client) get(path string) (body []byte, res *http.Response, err error) {
@@ -168,4 +188,10 @@ type fileLinksResponse struct {
 	Self    *string `json:"self"`
 	GitURL  *string `json:"git"`
 	HTMLURL *string `json:"html"`
+}
+
+type commit struct {
+	URL     string    `json:"url"`
+	SHA     string    `json:"sha"`
+	Created time.Time `json:"created"`
 }
