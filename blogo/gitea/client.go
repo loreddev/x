@@ -110,24 +110,60 @@ func (c *client) GetSingleCommit(user, repo, commitID string) (*commit, *http.Re
 	return commit, res, err
 }
 
-func (c *client) get(path string) (body []byte, res *http.Response, err error) {
-	res, err = c.http.Get(c.endpoint + path)
-	if err != nil {
-		return nil, nil, errors.Join(errors.New("failed to request"), err)
+func (c *client) GetFileReader(
+	owner, repo, ref, filepath string,
+	resolveLFS ...bool,
+) (io.ReadCloser, *http.Response, error) {
+	if len(resolveLFS) != 0 && resolveLFS[0] {
+		return c.getResponseReader(
+			fmt.Sprintf(
+				"/repos/%s/%s/media/%s?ref=%s",
+				owner,
+				repo,
+				filepath,
+				url.QueryEscape(ref),
+			),
+		)
 	}
-	defer res.Body.Close()
 
-	data, err := statusCodeToErr(res)
+	return c.getResponseReader(
+		fmt.Sprintf(
+			"/repos/%s/%s/raw/%s?ref=%s",
+			owner,
+			repo,
+			filepath,
+			url.QueryEscape(ref),
+		),
+	)
+}
+
+func (c *client) get(path string) ([]byte, *http.Response, error) {
+	body, res, err := c.getResponseReader(path)
 	if err != nil {
-		return data, res, err
+		return nil, res, err
 	}
+	defer body.Close()
 
-	data, err = io.ReadAll(res.Body)
+	data, err := io.ReadAll(body)
 	if err != nil {
 		return nil, res, err
 	}
 
 	return data, res, err
+}
+
+func (c *client) getResponseReader(path string) (io.ReadCloser, *http.Response, error) {
+	res, err := c.http.Get(c.endpoint + path)
+	if err != nil {
+		return nil, nil, errors.Join(errors.New("failed to request"), err)
+	}
+
+	data, err := statusCodeToErr(res)
+	if err != nil {
+		return io.NopCloser(bytes.NewReader(data)), res, err
+	}
+
+	return res.Body, res, err
 }
 
 func statusCodeToErr(resp *http.Response) (body []byte, err error) {
