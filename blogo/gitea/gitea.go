@@ -32,6 +32,7 @@ type plugin struct {
 
 	owner string
 	repo  string
+	ref   string
 }
 
 type Opts struct {
@@ -71,6 +72,10 @@ func New(owner, repo, apiUrl string, opts ...Opts) blogo.Plugin {
 
 	return &plugin{
 		client: client,
+
+		owner: owner,
+		repo:  repo,
+		ref:   opt.Ref,
 	}
 }
 
