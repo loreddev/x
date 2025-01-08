@@ -70,7 +70,9 @@ func (b *Blogo) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	f, err := b.files.Open(r.URL.Path)
+	path := strings.Trim(r.URL.Path, "/")
+
+	f, err := b.files.Open(path)
 	if errors.Is(err, fs.ErrNotExist) {
 		w.WriteHeader(http.StatusNotFound)
 		_, _ = w.Write([]byte(err.Error()))
