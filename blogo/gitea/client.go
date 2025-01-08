@@ -195,9 +195,10 @@ func statusCodeToErr(resp *http.Response) (body []byte, err error) {
 }
 
 type contentsResponse struct {
-	Name string `json:"name"`
-	Path string `json:"path"`
-	SHA  string `json:"sha"`
+	Name          string `json:"name"`
+	Path          string `json:"path"`
+	SHA           string `json:"sha"`
+	LastCommitSha string `json:"last_commit_sha"`
 
 	// NOTE: can be "file", "dir", "symlink" or "submodule"
 	Type string `json:"type"`
