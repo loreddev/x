@@ -17,6 +17,7 @@ package gitea
 
 import (
 	"fmt"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"strings"
@@ -75,4 +76,8 @@ func New(owner, repo, apiUrl string, opts ...Opts) blogo.Plugin {
 
 func (p *plugin) Name() string {
 	return pluginName
+}
+
+func (p *plugin) Source() (fs.FS, error) {
+	return newRepositoryFS(p.owner, p.repo, p.ref, p.client), nil
 }
