@@ -45,20 +45,20 @@ type client struct {
 }
 
 func newClient(endpoint string, http *http.Client) *client {
-	return &client{endpoint, http}
+	return &client{endpoint: endpoint, http: http}
 }
 
-func (c *client) GetContents(owner, repo, ref, filepath string) (contentsResponse, error) {
+func (c *client) GetContents(owner, repo, ref, filepath string) (*contentsResponse, error) {
 	data, _, err := c.get(
 		fmt.Sprintf("/repos/%s/%s/contents/%s?ref=%s", owner, repo, url.QueryEscape(ref), filepath),
 	)
 	if err != nil {
-		return contentsResponse{}, err
+		return &contentsResponse{}, err
 	}
 
-	var file contentsResponse
+	var file *contentsResponse
 	if err := json.Unmarshal(data, &file); err != nil {
-		return contentsResponse{}, errors.Join(
+		return &contentsResponse{}, errors.Join(
 			errors.New("failed to parse JSON response from API"),
 			err,
 		)
@@ -67,17 +67,17 @@ func (c *client) GetContents(owner, repo, ref, filepath string) (contentsRespons
 	return file, nil
 }
 
-func (c *client) ListContents(owner, repo, ref, filepath string) ([]contentsResponse, error) {
+func (c *client) ListContents(owner, repo, ref, filepath string) ([]*contentsResponse, error) {
 	data, _, err := c.get(
 		fmt.Sprintf("/repos/%s/%s/contents/%s?ref=%s", owner, repo, url.QueryEscape(ref), filepath),
 	)
 	if err != nil {
-		return []contentsResponse{}, err
+		return []*contentsResponse{}, err
 	}
 
-	var directory []contentsResponse
+	var directory []*contentsResponse
 	if err := json.Unmarshal(data, &directory); err != nil {
-		return []contentsResponse{}, errors.Join(
+		return []*contentsResponse{}, errors.Join(
 			errors.New("failed to parse JSON response from API"),
 			err,
 		)
