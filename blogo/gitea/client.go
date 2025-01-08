@@ -203,11 +203,11 @@ type contentsResponse struct {
 	// NOTE: can be "file", "dir", "symlink" or "submodule"
 	Type string `json:"type"`
 	Size int64  `json:"size"`
-	// NOTE: populated just when `type` is "contentsResponseTypeFile"
+	// NOTE: populated just when `type` is "file"
 	Encoding *string `json:"encoding"`
-	// NOTE: populated just when `type` is "contentsResponseTypeFile"
+	// NOTE: populated just when `type` is "file"
 	Content *string `json:"content"`
-	// NOTE: populated just when `type` is "contentsResponseTypeSymlink"
+	// NOTE: populated just when `type` is "link"
 	Target *string `json:"target"`
 
 	URL         *string `json:"url"`
@@ -215,7 +215,7 @@ type contentsResponse struct {
 	GitURL      *string `json:"git_url"`
 	DownloadURL *string `json:"download_url"`
 
-	// NOTE: populated just when `type` is "contentsResponseTypeSubmodule"
+	// NOTE: populated just when `type` is "submodule"
 	SubmoduleGitURL *string `json:"submodule_giit_url"`
 
 	Links *fileLinksResponse `json:"_links"`
