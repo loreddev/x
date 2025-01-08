@@ -59,7 +59,7 @@ func (c *client) GetContents(
 	}
 
 	var file *contentsResponse
-	if err := json.Unmarshal(data, &file); err != nil {
+	if err := json.Unmarshal(data, file); err != nil {
 		return &contentsResponse{}, res, errors.Join(
 			errors.New("failed to parse JSON response from API"),
 			err,
@@ -80,7 +80,7 @@ func (c *client) ListContents(
 	}
 
 	var directory []*contentsResponse
-	if err := json.Unmarshal(data, &directory); err != nil {
+	if err := json.Unmarshal(data, directory); err != nil {
 		return []*contentsResponse{}, res, errors.Join(
 			errors.New("failed to parse JSON response from API"),
 			err,
