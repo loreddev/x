@@ -187,10 +187,11 @@ func (f *repositoryDirFile) ReadDir(n int) ([]fs.DirEntry, error) {
 		return []fs.DirEntry{}, err
 	}
 
-	start, end := f.n, f.n+n+1
-
-	if end > len(list)-1 {
-		end = len(list) + 1
+	start, end := f.n, f.n+n
+	if n <= 0 {
+		start, end = 0, len(list)
+	} else if end > len(list) {
+		end = len(list)
 		err = io.EOF
 	}
 
@@ -206,6 +207,8 @@ func (f *repositoryDirFile) ReadDir(n int) ([]fs.DirEntry, error) {
 			client: f.client,
 		}}
 	}
+
+	f.n = end
 
 	return entries, err
 }
