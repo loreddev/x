@@ -56,9 +56,17 @@ func New(opts ...Options) *Blogo {
 }
 
 func (b *Blogo) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	log := b.log.With(slog.String("path", r.URL.Path))
+
+	log.Debug("Serving endpoint")
+
 	if b.files == nil {
+		log.Debug("No files in Blogo engine, initializing files")
+
 		err := b.Init()
 		if err != nil {
+			log.Error("Failed to initialize files")
+
 			err = errors.Join(errors.New("failed to initialize Blogo engine on first request"), err)
 			if b.panic {
 				panic(err.Error())
@@ -71,18 +79,24 @@ func (b *Blogo) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	path := strings.Trim(r.URL.Path, "/")
-
 	f, err := b.files.Open(path)
+
 	if errors.Is(err, fs.ErrNotExist) {
+		log.Error("Failed to read file", slog.String("error", err.Error()))
+
 		w.WriteHeader(http.StatusNotFound)
 		_, _ = w.Write([]byte(err.Error()))
 		return
 	} else if err != nil {
+		log.Error("Failed to read file", slog.String("error", err.Error()))
+
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
 	defer f.Close()
+
+	log.Debug("Writing response file")
 
 	buf := make([]byte, 1024)
 	for {
@@ -102,6 +116,8 @@ func (b *Blogo) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			_, _ = w.Write([]byte(err.Error()))
 		}
 	}
+
+	b.log.Debug("Finished responding file")
 }
 
 func (b *Blogo) Use(p Plugin) {
