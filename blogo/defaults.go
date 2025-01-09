@@ -21,3 +21,12 @@ func (f emptyFS) Open(name string) (fs.File, error) {
 	return nil, fs.ErrNotExist
 }
 
+type defaultRenderer struct{}
+
+func (p *defaultRenderer) Name() string {
+	return "blogo-default-renderer"
+}
+
+func (p *defaultRenderer) Render(f fs.File, w io.Writer) error {
+	return nil
+}

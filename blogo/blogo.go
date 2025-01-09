@@ -32,6 +32,7 @@ type Blogo struct {
 	files fs.FS
 
 	sources   []SourcerPlugin
+	renderers []RendererPlugin
 
 	log   *slog.Logger
 	panic bool
@@ -63,6 +64,10 @@ func (b *Blogo) Use(p Plugin) {
 	if p, ok := p.(SourcerPlugin); ok {
 		log.Debug("Added plugin", slog.String("type", "SourcerPlugin"))
 		b.sources = append(b.sources, p)
+	}
+	if p, ok := p.(RendererPlugin); ok {
+		log.Debug("Added plugin", slog.String("type", "RenderPlugin"))
+		b.renderers = append(b.renderers, p)
 	}
 }
 
@@ -109,26 +114,19 @@ func (b *Blogo) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	log.Debug("Writing response file")
 
-	buf := make([]byte, 1024)
-	for {
-		n, err := f.Read(buf)
-		if err != nil && err != io.EOF {
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
-		}
+	log.Debug("Rendering file")
 
-		if n == 0 {
-			break
-		}
+	// TODO: Support for multiple renderers (conditional renderers)
+	err = b.renderers[0].Render(f, w)
+	if err != nil {
+		log.Error("Failed to render file", slog.String("error", err.Error()))
 
-		_, err = w.Write(buf[:n])
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
-		}
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
 	}
 
-	b.log.Debug("Finished responding file")
+	log.Debug("Finished responding file")
 }
 
 func (b *Blogo) Init() error {
@@ -137,6 +135,10 @@ func (b *Blogo) Init() error {
 	if len(b.sources) == 0 {
 		b.log.Debug("No SourcerPlugin found, using default one")
 		b.Use(&defaultSourcer{})
+	}
+	if len(b.renderers) == 0 {
+		b.log.Debug("No RendererPlugin found, using default one")
+		b.Use(&defaultRenderer{})
 	}
 
 	fs, err := b.sources[0].Source() // TOOD: Support for multiple sources (via another plugin or built-in, with prefixes or not)
