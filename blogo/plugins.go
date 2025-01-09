@@ -15,7 +15,10 @@
 
 package blogo
 
-import "io/fs"
+import (
+	"io"
+	"io/fs"
+)
 
 type Plugin interface {
 	Name() string
@@ -24,4 +27,9 @@ type Plugin interface {
 type SourcerPlugin interface {
 	Plugin
 	Source() (fs.FS, error)
+}
+
+type RendererPlugin interface {
+	Plugin
+	Render(src fs.File, out io.Writer) error
 }
