@@ -95,6 +95,10 @@ func (b *Blogo) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	path := strings.Trim(r.URL.Path, "/")
+	if path == "" || path == "/" {
+		path = "."
+	}
+
 	f, err := b.files.Open(path)
 
 	if errors.Is(err, fs.ErrNotExist) {
