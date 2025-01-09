@@ -62,7 +62,12 @@ func (fsys *repositoryFS) Open(name string) (fs.File, error) {
 
 	// If previous call returned a error, it may be because the file is a directory,
 	// so we will call from it's parent directory to be able to get it's metadata.
-	list, res, err := fsys.client.ListContents(fsys.owner, fsys.repo, fsys.ref, path.Dir(name))
+	path := path.Dir(name)
+	if path == "." {
+		path = ""
+	}
+
+	list, res, err := fsys.client.ListContents(fsys.owner, fsys.repo, fsys.ref, path)
 	if err != nil {
 		if res.StatusCode == http.StatusUnauthorized {
 			return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrPermission}
