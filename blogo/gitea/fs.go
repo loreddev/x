@@ -77,6 +77,34 @@ func (fsys *repositoryFS) Open(name string) (fs.File, error) {
 		return nil, &fs.PathError{Op: "open", Path: name, Err: err}
 	}
 
+	// If the function is being called to open the root directory, return the
+	// repository as a root directory. We are returning it here since we can get
+	// a SHA of the past returned files.
+	if name == "." {
+		sha := ""
+		if len(list) > 0 {
+			sha = list[0].LastCommitSha
+		}
+
+		return &repositoryDirFile{repositoryFile{
+			contentsResponse: contentsResponse{
+				Name:          fsys.repo,
+				Path:          ".",
+				SHA:           sha,
+				LastCommitSha: sha,
+				Type:          "dir",
+			},
+
+			owner: fsys.owner,
+			repo:  fsys.repo,
+			ref:   fsys.ref,
+
+			client: fsys.client,
+
+			contents: nil,
+		}, 0}, nil
+	}
+
 	i := slices.IndexFunc(list, func(i *contentsResponse) bool {
 		return i.Path == name
 	})
