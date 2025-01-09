@@ -61,8 +61,7 @@ func (p *defaultRenderer) renderDirectory(f fs.ReadDirFile, w io.Writer) error {
 	}
 
 	for _, e := range es {
-		s := []byte(fmt.Sprintf("%s", e.Name()))
-		_, err := w.Write(s)
+		_, err := w.Write([]byte(fmt.Sprintf("%s\n", e.Name())))
 		if err != nil {
 			return errors.Join(
 				fmt.Errorf("failed to write directory file list, file %s", e.Name()),
