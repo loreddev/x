@@ -21,6 +21,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"strings"
 )
 
 type Options struct {
@@ -28,8 +29,9 @@ type Options struct {
 }
 
 type Blogo struct {
-	files   fs.FS
-	sources []SourcerPlugin
+	files fs.FS
+
+	sources   []SourcerPlugin
 
 	log   *slog.Logger
 	panic bool
@@ -52,6 +54,15 @@ func New(opts ...Options) *Blogo {
 		sources: []SourcerPlugin{},
 		log:     opt.Logger,
 		panic:   true, // TODO
+	}
+}
+
+func (b *Blogo) Use(p Plugin) {
+	log := b.log.With(slog.String("plugin", p.Name()))
+
+	if p, ok := p.(SourcerPlugin); ok {
+		log.Debug("Added plugin", slog.String("type", "SourcerPlugin"))
+		b.sources = append(b.sources, p)
 	}
 }
 
@@ -120,35 +131,19 @@ func (b *Blogo) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	b.log.Debug("Finished responding file")
 }
 
-func (b *Blogo) Use(p Plugin) {
-	if p, ok := p.(SourcerPlugin); ok {
-		b.log.Debug("Added sourcer plugin", slog.String("plugin", p.Name()))
-		b.sources = append(b.sources, p)
-	}
-}
-
 func (b *Blogo) Init() error {
 	b.log.Debug("Initializing blogo")
 
-	fs, err := b.sourceFiles()
+	if len(b.sources) == 0 {
+		b.log.Debug("No SourcerPlugin found, using default one")
+		b.Use(&defaultSourcer{})
+	}
+
+	fs, err := b.sources[0].Source() // TOOD: Support for multiple sources (via another plugin or built-in, with prefixes or not)
 	if err != nil {
 		return errors.Join(errors.New("failed to source files"), err)
 	}
 	b.files = fs
 
 	return nil
-}
-
-type emptyFS struct{}
-
-func (f emptyFS) Open(name string) (fs.File, error) {
-	return nil, fs.ErrNotExist
-}
-
-func (b *Blogo) sourceFiles() (fs.FS, error) {
-	if len(b.sources) == 0 {
-		return emptyFS{}, nil
-	}
-
-	return b.sources[0].Source() // TODO: Support for multiple sources (with or without preffixes, first-read, etc etc)
 }
