@@ -74,9 +74,23 @@ func (c *client) GetContents(
 func (c *client) ListContents(
 	owner, repo, ref, filepath string,
 ) ([]*contentsResponse, *http.Response, error) {
-	data, res, err := c.get(
-		fmt.Sprintf("/repos/%s/%s/contents/%s?ref=%s", owner, repo, filepath, url.QueryEscape(ref)),
+	endpoint := fmt.Sprintf(
+		"/repos/%s/%s/contents/%s?ref=%s",
+		owner,
+		repo,
+		filepath,
+		url.QueryEscape(ref),
 	)
+	if filepath == "" || filepath == "." {
+		endpoint = fmt.Sprintf(
+			"/repos/%s/%s/contents?ref=%s",
+			owner,
+			repo,
+			url.QueryEscape(ref),
+		)
+	}
+
+	data, res, err := c.get(endpoint)
 	if err != nil {
 		return []*contentsResponse{}, res, err
 	}
