@@ -72,7 +72,7 @@ func (b *Blogo) Use(p Plugin) {
 }
 
 func (b *Blogo) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log := b.log.With(slog.String("path", r.URL.Path))
+	log := b.log.With(slog.String("step", "SERVE"), slog.String("path", r.URL.Path))
 
 	log.Debug("Serving endpoint")
 
@@ -134,14 +134,15 @@ func (b *Blogo) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (b *Blogo) Init() error {
-	b.log.Debug("Initializing blogo")
+	log := b.log.With(slog.String("step", "INITIALIZATION"))
+	log.Debug("Initializing blogo")
 
 	if len(b.sources) == 0 {
-		b.log.Debug("No SourcerPlugin found, using default one")
+		log.Debug("No SourcerPlugin found, using default one")
 		b.Use(&defaultSourcer{})
 	}
 	if len(b.renderers) == 0 {
-		b.log.Debug("No RendererPlugin found, using default one")
+		log.Debug("No RendererPlugin found, using default one")
 		b.Use(&defaultRenderer{})
 	}
 

@@ -16,6 +16,7 @@
 package blogo
 
 import (
+	"errors"
 	"io"
 	"io/fs"
 )
@@ -24,12 +25,14 @@ type Plugin interface {
 	Name() string
 }
 
-type SourcerPlugin interface {
-	Plugin
-	Source() (fs.FS, error)
-}
+var ErrRendererNotSupportedFile = errors.New("this file is not supported by renderer")
 
 type RendererPlugin interface {
 	Plugin
 	Render(src fs.File, out io.Writer) error
+}
+
+type SourcerPlugin interface {
+	Plugin
+	Source() (fs.FS, error)
 }
