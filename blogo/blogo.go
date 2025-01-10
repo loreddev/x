@@ -17,6 +17,7 @@ package blogo
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"log/slog"
@@ -120,8 +121,7 @@ func (b *Blogo) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	log.Debug("Rendering file")
 
-	// TODO: Support for multiple renderers (conditional renderers)
-	err = b.renderers[0].Render(f, w)
+	err = b.render(f, w)
 	if err != nil {
 		log.Error("Failed to render file", slog.String("error", err.Error()))
 
@@ -151,6 +151,38 @@ func (b *Blogo) Init() error {
 		return errors.Join(errors.New("failed to source files"), err)
 	}
 	b.files = fs
+
+	return nil
+}
+
+func (b *Blogo) render(src fs.File, w io.Writer) error {
+	for _, r := range b.renderers {
+		log := b.log.With(slog.String("step", "RENDERING"), slog.String("plugin", r.Name()))
+
+		log.Debug("Using renderer")
+
+		// FIX?: io.Reader can only be read once, but the plugin may need to read
+		// from it to know if it can even render at all, which can break the next
+		// plugin render method. Maybe io.ReadSeeker or io.TeeReader could solve this?
+		// but it would change the API away from the fs.FS API. Also, a combination of
+		// io.TeeReader and io.MultiReader (example: https://abdus.dev/posts/sniffing-io-reader-in-golang/#solution-io.teereader-and-io.multireader)
+		// could solve without changing the API, but it would use more memory for each file.
+		// We could also just put multi-renderer and multi-sourcer support in optional plugins.
+		err := r.Render(src, w)
+		if errors.Is(err, ErrRendererNotSupportedFile) {
+			log.Debug("File not supported, skipping")
+
+			continue
+		} else if err != nil {
+			log.Error("Renderer failed")
+
+			return errors.Join(fmt.Errorf("failed to render with plugin %q", r.Name()), err)
+		} else {
+			log.Debug("Successfully rendered file!")
+
+			break
+		}
+	}
 
 	return nil
 }
