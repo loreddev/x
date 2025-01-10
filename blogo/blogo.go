@@ -141,10 +141,10 @@ func (b *Blogo) Init() error {
 		log.Debug("No SourcerPlugin found, using default one")
 		b.Use(&defaultSourcer{})
 	}
-	if len(b.renderers) == 0 {
-		log.Debug("No RendererPlugin found, using default one")
-		b.Use(&defaultRenderer{})
-	}
+
+	renderer := &defaultRenderer{}
+	log.Debug(fmt.Sprintf("Adding %q as fallback renderer", renderer.Name()))
+	b.Use(&defaultRenderer{})
 
 	fs, err := b.sources[0].Source() // TOOD: Support for multiple sources (via another plugin or built-in, with prefixes or not)
 	if err != nil {
