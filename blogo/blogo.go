@@ -25,6 +25,12 @@ import (
 	"strings"
 )
 
+type Blogo interface {
+	Use(Plugin)
+	Init() error
+	http.Handler
+}
+
 // TODO: use binary operation so multiple levels can be used together
 // type PanicLevel int
 //
@@ -37,7 +43,7 @@ type Options struct {
 	// ErrorResponse TODO: structured error template or plugin
 }
 
-type Blogo struct {
+type blogo struct {
 	files fs.FS
 
 	sources   []SourcerPlugin
@@ -47,7 +53,7 @@ type Blogo struct {
 	panic bool
 }
 
-func New(opts ...Options) *Blogo {
+func New(opts ...Options) Blogo {
 	opt := Options{}
 	if len(opts) > 0 {
 		opt = opts[0]
@@ -59,7 +65,7 @@ func New(opts ...Options) *Blogo {
 		opt.Logger = opt.Logger.WithGroup("blogo")
 	}
 
-	return &Blogo{
+	return &blogo{
 		files:   nil,
 		sources: []SourcerPlugin{},
 		log:     opt.Logger,
@@ -67,7 +73,7 @@ func New(opts ...Options) *Blogo {
 	}
 }
 
-func (b *Blogo) Use(p Plugin) {
+func (b *blogo) Use(p Plugin) {
 	log := b.log.With(slog.String("plugin", p.Name()))
 
 	if p, ok := p.(SourcerPlugin); ok {
@@ -80,7 +86,7 @@ func (b *Blogo) Use(p Plugin) {
 	}
 }
 
-func (b *Blogo) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (b *blogo) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log := b.log.With(slog.String("step", "SERVE"), slog.String("path", r.URL.Path))
 
 	log.Debug("Serving endpoint")
@@ -141,7 +147,7 @@ func (b *Blogo) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Debug("Finished responding file")
 }
 
-func (b *Blogo) Init() error {
+func (b *blogo) Init() error {
 	log := b.log.With(slog.String("step", "INITIALIZATION"))
 	log.Debug("Initializing blogo")
 
@@ -171,7 +177,7 @@ func (b *Blogo) Init() error {
 	return nil
 }
 
-func (b *Blogo) source() (fs.FS, error) {
+func (b *blogo) source() (fs.FS, error) {
 	log := b.log.With(slog.String("step", "SOURCING"))
 
 	if len(b.sources) == 1 {
@@ -207,7 +213,7 @@ func (b *Blogo) source() (fs.FS, error) {
 	return b.sources[0].Source()
 }
 
-func (b *Blogo) render(src fs.File, w io.Writer) error {
+func (b *blogo) render(src fs.File, w io.Writer) error {
 	log := b.log.With(slog.String("step", "RENDERING"))
 
 	if len(b.renderers) == 1 {
