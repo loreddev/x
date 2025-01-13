@@ -22,6 +22,8 @@ import (
 	"io/fs"
 )
 
+const plainTextPluginName = "blogo-plaintext-renderer"
+
 type painTextRenderer struct{}
 
 func NewPlainTextRenderer() Plugin {
@@ -29,7 +31,7 @@ func NewPlainTextRenderer() Plugin {
 }
 
 func (p *painTextRenderer) Name() string {
-	return "blogo-plaintext-renderer"
+	return plainTextPluginName
 }
 
 func (p *painTextRenderer) Render(f fs.File, w io.Writer) error {
