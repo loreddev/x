@@ -24,17 +24,17 @@ import (
 
 const plainTextPluginName = "blogo-plaintext-renderer"
 
-type painTextRenderer struct{}
+type painText struct{}
 
-func NewPlainTextRenderer() Plugin {
-	return &painTextRenderer{}
+func NewPlainText() Plugin {
+	return &painText{}
 }
 
-func (p *painTextRenderer) Name() string {
+func (p *painText) Name() string {
 	return plainTextPluginName
 }
 
-func (p *painTextRenderer) Render(f fs.File, w io.Writer) error {
+func (p *painText) Render(f fs.File, w io.Writer) error {
 	if d, ok := f.(fs.ReadDirFile); ok {
 		return p.renderDirectory(d, w)
 	}
@@ -59,7 +59,7 @@ func (p *painTextRenderer) Render(f fs.File, w io.Writer) error {
 	return nil
 }
 
-func (p *painTextRenderer) renderDirectory(f fs.ReadDirFile, w io.Writer) error {
+func (p *painText) renderDirectory(f fs.ReadDirFile, w io.Writer) error {
 	es, err := f.ReadDir(-1)
 	if err != nil {
 		return err
