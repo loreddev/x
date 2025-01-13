@@ -10,7 +10,7 @@ import (
 type defaultSourcer struct{}
 
 func (p *defaultSourcer) Name() string {
-	return "blogo-defaults-sourcer"
+	return "blogo-sourcer-empty"
 }
 
 func (p *defaultSourcer) Source() (fs.FS, error) {
@@ -23,13 +23,17 @@ func (f emptyFS) Open(name string) (fs.File, error) {
 	return nil, fs.ErrNotExist
 }
 
-type defaultRenderer struct{}
+type painTextRenderer struct{}
 
-func (p *defaultRenderer) Name() string {
-	return "blogo-default-renderer"
+func NewPlainTextRenderer() Plugin {
+	return &painTextRenderer{}
 }
 
-func (p *defaultRenderer) Render(f fs.File, w io.Writer) error {
+func (p *painTextRenderer) Name() string {
+	return "blogo-renderer-plaintext"
+}
+
+func (p *painTextRenderer) Render(f fs.File, w io.Writer) error {
 	if d, ok := f.(fs.ReadDirFile); ok {
 		return p.renderDirectory(d, w)
 	}
@@ -54,7 +58,7 @@ func (p *defaultRenderer) Render(f fs.File, w io.Writer) error {
 	return nil
 }
 
-func (p *defaultRenderer) renderDirectory(f fs.ReadDirFile, w io.Writer) error {
+func (p *painTextRenderer) renderDirectory(f fs.ReadDirFile, w io.Writer) error {
 	es, err := f.ReadDir(-1)
 	if err != nil {
 		return err
