@@ -28,25 +28,15 @@ type multiRenderer struct {
 }
 
 type MultiRendererOpts struct {
-	SkipOnError *bool
-	PanicOnInit *bool
-	Logger      *slog.Logger
+	NotSkipOnError bool
+	NotPanicOnInit bool
+	Logger         *slog.Logger
 }
 
 func NewMultiRenderer(opts ...MultiRendererOpts) MultiRenderer {
 	opt := MultiRendererOpts{}
 	if len(opts) > 0 {
 		opt = opts[0]
-	}
-
-	if opt.SkipOnError == nil {
-		d := true
-		opt.SkipOnError = &d
-	}
-
-	if opt.PanicOnInit == nil {
-		d := true
-		opt.PanicOnInit = &d
 	}
 
 	if opt.Logger == nil {
@@ -57,8 +47,8 @@ func NewMultiRenderer(opts ...MultiRendererOpts) MultiRenderer {
 	return &multiRenderer{
 		renderers: []RendererPlugin{},
 
-		skipOnError: *opt.SkipOnError,
-		panicOnInit: *opt.PanicOnInit,
+		skipOnError: !opt.NotSkipOnError,
+		panicOnInit: !opt.NotPanicOnInit,
 
 		log: opt.Logger,
 	}
