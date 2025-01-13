@@ -78,7 +78,7 @@ func (p *multiSourcer) Use(plugin Plugin) {
 	log := p.log.With(slog.String("plugin", plugin.Name()))
 
 	if plg, ok := plugin.(SourcerPlugin); ok {
-		log.Debug("Added renderer plugin")
+		log.Debug("Added sourcer plugin")
 		p.sources = append(p.sources, plg)
 	} else {
 		m := fmt.Sprintf("failed to add plugin %q, since it doesn't implement SourcerPlugin", plugin.Name())
