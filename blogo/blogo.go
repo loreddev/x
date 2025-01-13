@@ -142,11 +142,18 @@ func (b *Blogo) Init() error {
 		b.Use(&defaultSourcer{})
 	}
 
-	renderer := &defaultRenderer{}
-	log.Debug(fmt.Sprintf("Adding %q as fallback renderer", renderer.Name()))
-	b.Use(&defaultRenderer{})
+	if len(b.renderers) == 0 {
+		renderer := NewPlainTextRenderer()
+		log.Debug(
+			fmt.Sprintf(
+				"No RendererPlugin plugin found, adding %q as fallback renderer",
+				renderer.Name(),
+			),
+		)
+		b.Use(renderer)
+	}
 
-	fs, err := b.sources[0].Source() // TOOD: Support for multiple sources (via another plugin or built-in, with prefixes or not)
+	fs, err := b.sources[0].Source() // TODO: Support for multiple sources (via another plugin or built-in, with prefixes or not)
 	if err != nil {
 		return errors.Join(errors.New("failed to source files"), err)
 	}
@@ -156,33 +163,34 @@ func (b *Blogo) Init() error {
 }
 
 func (b *Blogo) render(src fs.File, w io.Writer) error {
-	for _, r := range b.renderers {
-		log := b.log.With(slog.String("step", "RENDERING"), slog.String("plugin", r.Name()))
+	log := b.log.With(slog.String("step", "RENDERING"))
 
-		log.Debug("Using renderer")
-
-		// FIX?: io.Reader can only be read once, but the plugin may need to read
-		// from it to know if it can even render at all, which can break the next
-		// plugin render method. Maybe io.ReadSeeker or io.TeeReader could solve this?
-		// but it would change the API away from the fs.FS API. Also, a combination of
-		// io.TeeReader and io.MultiReader (example: https://abdus.dev/posts/sniffing-io-reader-in-golang/#solution-io.teereader-and-io.multireader)
-		// could solve without changing the API, but it would use more memory for each file.
-		// We could also just put multi-renderer and multi-sourcer support in optional plugins.
-		err := r.Render(src, w)
-		if errors.Is(err, ErrRendererNotSupportedFile) {
-			log.Debug("File not supported, skipping")
-
-			continue
-		} else if err != nil {
-			log.Error("Renderer failed")
-
-			return errors.Join(fmt.Errorf("failed to render with plugin %q", r.Name()), err)
-		} else {
-			log.Debug("Successfully rendered file!")
-
-			break
-		}
+	if len(b.renderers) == 1 {
+		log.Debug(
+			"Just one renderer found, using it directly",
+			slog.String("plugin", b.renderers[0].Name()),
+		)
+		return b.renderers[0].Render(src, w)
 	}
 
-	return nil
+	log.Debug("Multiple renderers found, initializing built-in multi-renderer plugin")
+
+	f, t := false, true
+	multi := NewMultiRenderer(MultiRendererOpts{
+		SkipOnError: &f,
+		PanicOnInit: &t,
+		Logger:      log,
+	})
+
+	for _, r := range b.renderers {
+		log.Debug("Adding plugin to multi-renderer", slog.String("plugin", r.Name()))
+		multi.Use(r)
+	}
+
+	log.Debug("Overriding renderers slice")
+
+	b.renderers = make([]RendererPlugin, 1)
+	b.renderers[0] = multi
+
+	return b.render(src, w)
 }
