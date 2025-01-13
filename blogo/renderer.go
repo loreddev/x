@@ -11,7 +11,7 @@ import (
 
 var ErrRendererNotSupportedFile = errors.New("this file is not supported by renderer")
 
-const multiRendererPluginName = "blogo-multirenderer"
+const multiRendererPluginName = "blogo-multirenderer-renderer"
 
 type MultiRenderer interface {
 	RendererPlugin

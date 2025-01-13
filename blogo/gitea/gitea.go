@@ -25,7 +25,7 @@ import (
 	"forge.capytal.company/loreddev/x/blogo"
 )
 
-const pluginName = "blogo-gitea"
+const pluginName = "blogo-gitea-sourcer"
 
 type plugin struct {
 	client *client

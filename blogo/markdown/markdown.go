@@ -15,7 +15,7 @@ import (
 	"forge.capytal.company/loreddev/x/blogo"
 )
 
-const pluginName = "blogo-markdown"
+const pluginName = "blogo-markdown-renderer"
 
 type plugin struct {
 	parser   parser.Parser
