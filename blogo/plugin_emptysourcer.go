@@ -17,6 +17,8 @@ package blogo
 
 import "io/fs"
 
+const emptySourcerPluginName = "blogo-empty-sourcer"
+
 type emptySourcer struct{}
 
 func NewEmptySourcer() Plugin {
@@ -24,7 +26,7 @@ func NewEmptySourcer() Plugin {
 }
 
 func (p *emptySourcer) Name() string {
-	return "blogo-empty-sourcer"
+	return emptySourcerPluginName
 }
 
 func (p *emptySourcer) Source() (fs.FS, error) {
