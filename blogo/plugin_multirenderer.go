@@ -83,7 +83,7 @@ func (p *multiRenderer) Use(plugin Plugin) {
 		m := fmt.Sprintf("failed to add plugin %q, since it doesn't implement RendererPlugin", plugin.Name())
 		log.Error(m)
 		if p.panicOnInit {
-			panic(fmt.Sprintf("%s: %s", multiRendererPluginName, m))
+			panic(fmt.Sprintf("%s: %s", p.Name(), m))
 		}
 	}
 }
