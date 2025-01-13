@@ -153,13 +153,49 @@ func (b *Blogo) Init() error {
 		b.Use(renderer)
 	}
 
-	fs, err := b.sources[0].Source() // TODO: Support for multiple sources (via another plugin or built-in, with prefixes or not)
+	fs, err := b.source()
 	if err != nil {
 		return errors.Join(errors.New("failed to source files"), err)
 	}
 	b.files = fs
 
 	return nil
+}
+
+func (b *Blogo) source() (fs.FS, error) {
+	log := b.log.With(slog.String("step", "SOURCING"))
+
+	if len(b.sources) == 1 {
+		log.Debug(
+			"Just one sources found, using it directly",
+			slog.String("plugin", b.sources[0].Name()),
+		)
+		return b.sources[0].Source()
+	}
+
+	log.Debug(
+		fmt.Sprintf(
+			"Multiple sources found, initializing built-in %q plugin",
+			multiSourcerPluginName,
+		),
+	)
+
+	multi := NewMultiSourcer(MultiSourcerOpts{
+		NotPanicOnInit:       true,
+		NotSkipOnFSError:     false,
+		NotSkipOnSourceError: false,
+		Logger:               log,
+	})
+
+	for _, s := range b.sources {
+		log.Debug("Adding plugin to multi-sourcer", slog.String("plugin", s.Name()))
+		multi.Use(s)
+	}
+
+	b.sources = make([]SourcerPlugin, 1)
+	b.sources[0] = multi
+
+	return b.sources[0].Source()
 }
 
 func (b *Blogo) render(src fs.File, w io.Writer) error {
