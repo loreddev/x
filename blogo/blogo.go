@@ -25,8 +25,16 @@ import (
 	"strings"
 )
 
+// TODO: use binary operation so multiple levels can be used together
+// type PanicLevel int
+//
+// const (
+// 	PanicOnInit
+// )
+
 type Options struct {
 	Logger *slog.Logger
+	// ErrorResponse TODO: structured error template or plugin
 }
 
 type Blogo struct {
@@ -138,8 +146,9 @@ func (b *Blogo) Init() error {
 	log.Debug("Initializing blogo")
 
 	if len(b.sources) == 0 {
-		log.Debug("No SourcerPlugin found, using default one")
-		b.Use(&defaultSourcer{})
+		sourcer := NewEmptySourcer()
+		log.Debug(fmt.Sprintf("No SourcerPlugin found, using %q as fallback", sourcer.Name()))
+		b.Use(sourcer)
 	}
 
 	if len(b.renderers) == 0 {

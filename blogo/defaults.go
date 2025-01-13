@@ -7,22 +7,6 @@ import (
 	"io/fs"
 )
 
-type defaultSourcer struct{}
-
-func (p *defaultSourcer) Name() string {
-	return "blogo-sourcer-empty"
-}
-
-func (p *defaultSourcer) Source() (fs.FS, error) {
-	return emptyFS{}, nil
-}
-
-type emptyFS struct{}
-
-func (f emptyFS) Open(name string) (fs.File, error) {
-	return nil, fs.ErrNotExist
-}
-
 type painTextRenderer struct{}
 
 func NewPlainTextRenderer() Plugin {
