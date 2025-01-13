@@ -191,5 +191,5 @@ func (b *Blogo) render(src fs.File, w io.Writer) error {
 	b.renderers = make([]RendererPlugin, 1)
 	b.renderers[0] = multi
 
-	return b.render(src, w)
+	return b.renderers[0].Render(src, w)
 }
