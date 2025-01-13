@@ -173,7 +173,12 @@ func (b *Blogo) render(src fs.File, w io.Writer) error {
 		return b.renderers[0].Render(src, w)
 	}
 
-	log.Debug("Multiple renderers found, initializing built-in multi-renderer plugin")
+	log.Debug(
+		fmt.Sprintf(
+			"Multiple renderers found, initializing built-in %q plugin",
+			multiRendererPluginName,
+		),
+	)
 
 	multi := NewMultiRenderer(MultiRendererOpts{
 		NotSkipOnError: false,
