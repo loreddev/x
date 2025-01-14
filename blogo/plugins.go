@@ -17,7 +17,6 @@ package blogo
 
 import (
 	"io"
-	"io/fs"
 )
 
 type Plugin interface {
