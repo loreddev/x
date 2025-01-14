@@ -24,7 +24,7 @@ type Plugin interface {
 	Name() string
 }
 
-type ListPlugin interface {
+type PluginGroup interface {
 	Plugin
 	Plugins() []Plugin
 }
