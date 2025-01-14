@@ -89,10 +89,10 @@ func (p *multiSourcer) Use(plugin Plugin) {
 	}
 }
 
-func (p *multiSourcer) Source() (fs.FS, error) {
+func (p *multiSourcer) Source() (FS, error) {
 	log := p.log
 
-	fileSystems := []fs.FS{}
+	fileSystems := []FS{}
 
 	for _, s := range p.sources {
 		log = log.With(slog.String("plugin", p.Name()))
@@ -115,7 +115,7 @@ func (p *multiSourcer) Source() (fs.FS, error) {
 		fileSystems = append(fileSystems, f)
 	}
 
-	f := make([]fs.FS, len(fileSystems), len(fileSystems))
+	f := make([]FS, len(fileSystems), len(fileSystems))
 	for i := range f {
 		f[i] = fileSystems[i]
 	}
@@ -127,11 +127,23 @@ func (p *multiSourcer) Source() (fs.FS, error) {
 }
 
 type multiSourcerFS struct {
-	fileSystems []fs.FS
+	fileSystems []FS
 	skipOnError bool
 }
 
-func (mf *multiSourcerFS) Open(name string) (fs.File, error) {
+func (pf *multiSourcerFS) Metadata() Metadata {
+	fs := make([]FS, len(pf.fileSystems), len(pf.fileSystems))
+
+	i := 0
+	for _, v := range pf.fileSystems {
+		fs[i] = v
+		i++
+	}
+
+	return NewMultiFSMetadata(fs)
+}
+
+func (mf *multiSourcerFS) Open(name string) (File, error) {
 	for _, f := range mf.fileSystems {
 		file, err := f.Open(name)
 

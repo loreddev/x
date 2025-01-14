@@ -56,3 +56,29 @@ func (m MetadataMap) Delete(key string, strict ...bool) error {
 	return nil
 }
 
+type multiFSMetadata struct {
+	MetadataMap
+	fileSystems []FS
+}
+
+func NewMultiFSMetadata(fileSytems []FS) Metadata {
+	return &multiFSMetadata{
+		MetadataMap: MetadataMap(map[string]any{}),
+		fileSystems: fileSytems,
+	}
+}
+
+func (m *multiFSMetadata) Get(key string) (any, error) {
+	if v, err := m.MetadataMap.Get(key); err == nil {
+		return v, nil
+	}
+
+	for _, m := range m.fileSystems {
+		v, err := m.Metadata().Get(key)
+		if err == nil {
+			return v, nil
+		}
+	}
+	return nil, ErrMetadataNotFound
+}
+
