@@ -30,9 +30,16 @@ type Metadata interface {
 	Delete(key string, strict ...bool) error
 }
 
-type MetadataMap map[string]any
+type metadataMap map[string]any
 
-func (m MetadataMap) Get(key string) (any, error) {
+func MetadataMap(m map[string]any) Metadata {
+	if m == nil {
+		m = map[string]any{}
+	}
+	return metadataMap(m)
+}
+
+func (m metadataMap) Get(key string) (any, error) {
 	v, ok := m[key]
 	if !ok {
 		return nil, ErrMetadataNotFound
@@ -40,7 +47,7 @@ func (m MetadataMap) Get(key string) (any, error) {
 	return v, nil
 }
 
-func (m MetadataMap) Set(key string, v any, strict ...bool) error {
+func (m metadataMap) Set(key string, v any, strict ...bool) error {
 	if _, ok := m[key]; ok && len(strict) > 0 && strict[0] {
 		return ErrMetadataNotEmpty
 	}
@@ -48,7 +55,7 @@ func (m MetadataMap) Set(key string, v any, strict ...bool) error {
 	return nil
 }
 
-func (m MetadataMap) Delete(key string, strict ...bool) error {
+func (m metadataMap) Delete(key string, strict ...bool) error {
 	if _, ok := m[key]; ok && len(strict) > 0 && strict[0] {
 		return ErrMetadataNotEmpty
 	}
@@ -57,19 +64,19 @@ func (m MetadataMap) Delete(key string, strict ...bool) error {
 }
 
 type multiFSMetadata struct {
-	MetadataMap
+	Metadata
 	fileSystems []FS
 }
 
 func NewMultiFSMetadata(fileSytems []FS) Metadata {
 	return &multiFSMetadata{
-		MetadataMap: MetadataMap(map[string]any{}),
+		Metadata:    MetadataMap(map[string]any{}),
 		fileSystems: fileSytems,
 	}
 }
 
 func (m *multiFSMetadata) Get(key string) (any, error) {
-	if v, err := m.MetadataMap.Get(key); err == nil {
+	if v, err := m.Metadata.Get(key); err == nil {
 		return v, nil
 	}
 
