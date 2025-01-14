@@ -29,6 +29,11 @@ type PluginGroup interface {
 	Plugins() []Plugin
 }
 
+type PluginWithPlugins interface {
+	Plugin
+	Use(Plugin)
+}
+
 type RendererPlugin interface {
 	Plugin
 	Render(src fs.File, out io.Writer) error

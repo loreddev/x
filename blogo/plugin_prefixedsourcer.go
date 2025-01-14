@@ -29,7 +29,7 @@ const prefixedSourcerPluginName = "blogo-prefixedsourcer-sourcer"
 
 type PrefixedSourcer interface {
 	SourcerPlugin
-	Use(Plugin)
+	PluginWithPlugins
 	UseNamed(string, Plugin)
 }
 

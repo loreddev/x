@@ -30,7 +30,7 @@ const multiRendererPluginName = "blogo-multirenderer-renderer"
 
 type MultiRenderer interface {
 	RendererPlugin
-	Use(Plugin)
+	PluginWithPlugins
 }
 
 type multiRenderer struct {

@@ -27,7 +27,7 @@ const multiSourcerPluginName = "blogo-multisourcer-sourcer"
 
 type MultiSourcer interface {
 	SourcerPlugin
-	Use(Plugin)
+	PluginWithPlugins
 }
 
 type multiSourcer struct {
