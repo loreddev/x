@@ -37,10 +37,10 @@ type PluginGroup interface {
 
 type RendererPlugin interface {
 	Plugin
-	Render(src fs.File, out io.Writer) error
+	Render(src File, out io.Writer) error
 }
 
 type SourcerPlugin interface {
 	Plugin
-	Source() (fs.FS, error)
+	Source() (FS, error)
 }
