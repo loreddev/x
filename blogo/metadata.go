@@ -30,3 +30,29 @@ type Metadata interface {
 	Delete(key string, strict ...bool) error
 }
 
+type MetadataMap map[string]any
+
+func (m MetadataMap) Get(key string) (any, error) {
+	v, ok := m[key]
+	if !ok {
+		return nil, ErrMetadataNotFound
+	}
+	return v, nil
+}
+
+func (m MetadataMap) Set(key string, v any, strict ...bool) error {
+	if _, ok := m[key]; ok && len(strict) > 0 && strict[0] {
+		return ErrMetadataNotEmpty
+	}
+	m[key] = v
+	return nil
+}
+
+func (m MetadataMap) Delete(key string, strict ...bool) error {
+	if _, ok := m[key]; ok && len(strict) > 0 && strict[0] {
+		return ErrMetadataNotEmpty
+	}
+	delete(m, key)
+	return nil
+}
+
