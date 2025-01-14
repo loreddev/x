@@ -158,7 +158,7 @@ func (b *blogo) Init() error {
 	}
 
 	if len(b.renderers) == 0 {
-		renderer := NewPlainTextRenderer()
+		renderer := NewPlainText()
 		log.Debug(
 			fmt.Sprintf(
 				"No RendererPlugin plugin found, adding %q as fallback renderer",
