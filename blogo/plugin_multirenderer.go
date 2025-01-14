@@ -88,7 +88,7 @@ func (p *multiRenderer) Use(plugin Plugin) {
 	}
 }
 
-func (p *multiRenderer) Render(f fs.File, w io.Writer) error {
+func (p *multiRenderer) Render(f File, w io.Writer) error {
 	mf := newMultiRendererFile(f)
 	for _, r := range p.renderers {
 		log := p.log.With(slog.String("plugin", r.Name()))
