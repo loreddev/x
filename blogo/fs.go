@@ -26,5 +26,5 @@ type FS interface {
 
 type File interface {
 	fs.File
-	Metadata() FileMetadata
+	Metadata() Metadata
 }
