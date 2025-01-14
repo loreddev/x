@@ -89,3 +89,19 @@ func (m *multiFSMetadata) Get(key string) (any, error) {
 	return nil, ErrMetadataNotFound
 }
 
+type immutableMetadata struct {
+	Metadata
+}
+
+func ImmutableMetadata(m Metadata) Metadata {
+	return &immutableMetadata{m}
+}
+
+func (m *immutableMetadata) Set(key string, v any, strict ...bool) error {
+	return ErrMetadataImmutable
+}
+
+func (m *immutableMetadata) Delete(key string, strict ...bool) error {
+	return ErrMetadataImmutable
+}
+
