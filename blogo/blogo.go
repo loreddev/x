@@ -44,7 +44,7 @@ type Options struct {
 }
 
 type blogo struct {
-	files fs.FS
+	files FS
 
 	sources   []SourcerPlugin
 	renderers []RendererPlugin
