@@ -145,10 +145,10 @@ func (p *prefixedSourcer) UseNamed(prefix string, plugin Plugin) {
 	p.sources[prefix] = sourcer
 }
 
-func (p *prefixedSourcer) Source() (fs.FS, error) {
+func (p *prefixedSourcer) Source() (FS, error) {
 	log := p.log
 
-	fileSystems := make(map[string]fs.FS, len(p.sources))
+	fileSystems := make(map[string]FS, len(p.sources))
 
 	for a, s := range p.sources {
 		log = log.With(slog.String("plugin", p.Name()), slog.String("prefix", a))
@@ -178,11 +178,23 @@ func (p *prefixedSourcer) Source() (fs.FS, error) {
 }
 
 type prefixedSourcerFS struct {
-	fileSystems     map[string]fs.FS
+	fileSystems     map[string]FS
 	prefixSeparator string
 }
 
-func (pf *prefixedSourcerFS) Open(name string) (fs.File, error) {
+func (pf *prefixedSourcerFS) Metadata() Metadata {
+	fs := make([]FS, len(pf.fileSystems), len(pf.fileSystems))
+
+	i := 0
+	for _, v := range pf.fileSystems {
+		fs[i] = v
+		i++
+	}
+
+	return NewMultiFSMetadata(fs)
+}
+
+func (pf *prefixedSourcerFS) Open(name string) (File, error) {
 	prefix, path, found := strings.Cut(name, pf.prefixSeparator)
 	if !found {
 		return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrNotExist}
