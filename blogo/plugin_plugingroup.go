@@ -15,32 +15,24 @@
 
 package blogo
 
-import (
-	"io"
-	"io/fs"
-)
+const pluginGroupPluginName = "blogo-plugingroup-group"
 
-type Plugin interface {
-	Name() string
+type pluginGroup struct {
+	plugins []Plugin
 }
 
-type PluginWithPlugins interface {
-	Plugin
-	Use(Plugin)
+func NewPluginGroup(plugins ...Plugin) PluginGroup {
+	return &pluginGroup{plugins}
 }
 
-type PluginGroup interface {
-	Plugin
-	PluginWithPlugins
-	Plugins() []Plugin
+func (p *pluginGroup) Name() string {
+	return pluginGroupPluginName
 }
 
-type RendererPlugin interface {
-	Plugin
-	Render(src fs.File, out io.Writer) error
+func (p *pluginGroup) Use(plugin Plugin) {
+	p.plugins = append(p.plugins, plugin)
 }
 
-type SourcerPlugin interface {
-	Plugin
-	Source() (fs.FS, error)
+func (p *pluginGroup) Plugins() []Plugin {
+	return p.plugins
 }
