@@ -184,7 +184,7 @@ func (b *blogo) Init() error {
 	return nil
 }
 
-func (b *blogo) source() (fs.FS, error) {
+func (b *blogo) source() (FS, error) {
 	log := b.log.With(slog.String("step", "SOURCING"))
 
 	if len(b.sources) == 1 {
@@ -220,7 +220,7 @@ func (b *blogo) source() (fs.FS, error) {
 	return b.sources[0].Source()
 }
 
-func (b *blogo) render(src fs.File, w io.Writer) error {
+func (b *blogo) render(src File, w io.Writer) error {
 	log := b.log.With(slog.String("step", "RENDERING"))
 
 	if len(b.renderers) == 1 {
