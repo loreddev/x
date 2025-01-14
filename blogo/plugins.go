@@ -24,6 +24,11 @@ type Plugin interface {
 	Name() string
 }
 
+type ListPlugin interface {
+	Plugin
+	Plugins() []Plugin
+}
+
 type RendererPlugin interface {
 	Plugin
 	Render(src fs.File, out io.Writer) error

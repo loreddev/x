@@ -76,6 +76,13 @@ func New(opts ...Options) Blogo {
 func (b *blogo) Use(p Plugin) {
 	log := b.log.With(slog.String("plugin", p.Name()))
 
+	if p, ok := p.(ListPlugin); ok {
+		log.Debug("Added plugin", slog.String("type", "PluginList"))
+		for _, p := range p.Plugins() {
+			b.Use(p)
+		}
+	}
+
 	if p, ok := p.(SourcerPlugin); ok {
 		log.Debug("Added plugin", slog.String("type", "SourcerPlugin"))
 		b.sources = append(b.sources, p)
