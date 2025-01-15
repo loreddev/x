@@ -151,79 +151,79 @@ type TypedMetadata struct {
 	Metadata
 }
 
-func NewTypedMetadata(m Metadata) TypedMetadata {
-	return TypedMetadata{m}
+func NewTypedMetadata(m Metadata) *TypedMetadata {
+	return &TypedMetadata{m}
 }
 
-func (m TypedMetadata) GetBool(key string) (bool, error) {
+func (m *TypedMetadata) GetBool(key string) (bool, error) {
 	return GetTyped[bool](m, key)
 }
 
-func (m TypedMetadata) GetString(key string) (string, error) {
+func (m *TypedMetadata) GetString(key string) (string, error) {
 	return GetTyped[string](m, key)
 }
 
-func (m TypedMetadata) GetInt(key string) (int, error) {
+func (m *TypedMetadata) GetInt(key string) (int, error) {
 	return GetTyped[int](m, key)
 }
 
-func (m TypedMetadata) GetInt8(key string) (int8, error) {
+func (m *TypedMetadata) GetInt8(key string) (int8, error) {
 	return GetTyped[int8](m, key)
 }
 
-func (m TypedMetadata) GetInt16(key string) (int16, error) {
+func (m *TypedMetadata) GetInt16(key string) (int16, error) {
 	return GetTyped[int16](m, key)
 }
 
-func (m TypedMetadata) GetInt32(key string) (int32, error) {
+func (m *TypedMetadata) GetInt32(key string) (int32, error) {
 	return GetTyped[int32](m, key)
 }
 
-func (m TypedMetadata) GetInt64(key string) (int64, error) {
+func (m *TypedMetadata) GetInt64(key string) (int64, error) {
 	return GetTyped[int64](m, key)
 }
 
-func (m TypedMetadata) GetUint(key string) (uint, error) {
+func (m *TypedMetadata) GetUint(key string) (uint, error) {
 	return GetTyped[uint](m, key)
 }
 
-func (m TypedMetadata) GetUint8(key string) (uint8, error) {
+func (m *TypedMetadata) GetUint8(key string) (uint8, error) {
 	return GetTyped[uint8](m, key)
 }
 
-func (m TypedMetadata) GetUint16(key string) (uint16, error) {
+func (m *TypedMetadata) GetUint16(key string) (uint16, error) {
 	return GetTyped[uint16](m, key)
 }
 
-func (m TypedMetadata) GetUint32(key string) (uint32, error) {
+func (m *TypedMetadata) GetUint32(key string) (uint32, error) {
 	return GetTyped[uint32](m, key)
 }
 
-func (m TypedMetadata) GetUint64(key string) (uint64, error) {
+func (m *TypedMetadata) GetUint64(key string) (uint64, error) {
 	return GetTyped[uint64](m, key)
 }
 
-func (m TypedMetadata) GetByte(key string) (byte, error) {
+func (m *TypedMetadata) GetByte(key string) (byte, error) {
 	return GetTyped[byte](m, key)
 }
 
-func (m TypedMetadata) GetRune(key string) (rune, error) {
+func (m *TypedMetadata) GetRune(key string) (rune, error) {
 	return GetTyped[rune](m, key)
 }
 
-func (m TypedMetadata) GetFloat32(key string) (float32, error) {
+func (m *TypedMetadata) GetFloat32(key string) (float32, error) {
 	return GetTyped[float32](m, key)
 }
 
-func (m TypedMetadata) GetFloat64(key string) (float64, error) {
+func (m *TypedMetadata) GetFloat64(key string) (float64, error) {
 	return GetTyped[float64](m, key)
 }
 
-func (m TypedMetadata) GetComplex64(key string) (complex64, error) {
+func (m *TypedMetadata) GetComplex64(key string) (complex64, error) {
 	return GetTyped[complex64](m, key)
 }
 
-func (m TypedMetadata) GetComplex128(key string) (complex128, error) {
+func (m *TypedMetadata) GetComplex128(key string) (complex128, error) {
 	return GetTyped[complex128](m, key)
 }
 
