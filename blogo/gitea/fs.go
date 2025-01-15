@@ -27,9 +27,13 @@ import (
 	"slices"
 	"syscall"
 	"time"
+
+	"forge.capytal.company/loreddev/x/blogo"
 )
 
 type repositoryFS struct {
+	metadata map[string]any
+
 	owner string
 	repo  string
 	ref   string
@@ -37,11 +41,32 @@ type repositoryFS struct {
 	client *client
 }
 
-func newRepositoryFS(owner, repo, ref string, client *client) *repositoryFS {
-	return &repositoryFS{owner: owner, repo: repo, ref: ref, client: client}
+func newRepositoryFS(owner, repo, ref string, client *client) blogo.FS {
+	return &repositoryFS{
+		owner:  owner,
+		repo:   repo,
+		ref:    ref,
+		client: client,
+	}
 }
 
-func (fsys *repositoryFS) Open(name string) (fs.File, error) {
+func (fsys *repositoryFS) Metadata() blogo.Metadata {
+	// TODO: Properly implement metadata with contents from the API
+	if fsys.metadata == nil || (fsys.metadata != nil && len(fsys.metadata) == 0) {
+		m := map[string]any{}
+		m["gitea.owner"] = fsys.owner
+		m["gitea.repository"] = fsys.repo
+
+		if fsys.ref != "" {
+			m["gitea.ref"] = fsys.ref
+		}
+
+		fsys.metadata = m
+	}
+	return blogo.MetadataMap(fsys.metadata)
+}
+
+func (fsys *repositoryFS) Open(name string) (blogo.File, error) {
 	if !fs.ValidPath(name) {
 		return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrInvalid}
 	}
@@ -145,6 +170,8 @@ func (fsys *repositoryFS) Open(name string) (fs.File, error) {
 type repositoryFile struct {
 	contentsResponse
 
+	metadata map[string]any
+
 	owner string
 	repo  string
 	ref   string
@@ -152,6 +179,22 @@ type repositoryFile struct {
 	client *client
 
 	contents io.ReadCloser
+}
+
+func (f *repositoryFile) Metadata() blogo.Metadata {
+	// TODO: Properly implement metadata with contents from the API
+	if f.metadata == nil || (f.metadata != nil && len(f.metadata) == 0) {
+		m := map[string]any{}
+		m["gitea.owner"] = f.owner
+		m["gitea.repository"] = f.repo
+
+		if f.ref != "" {
+			m["gitea.ref"] = f.ref
+		}
+
+		f.metadata = m
+	}
+	return blogo.MetadataMap(f.metadata)
 }
 
 func (f *repositoryFile) Stat() (fs.FileInfo, error) {
