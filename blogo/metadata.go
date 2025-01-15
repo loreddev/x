@@ -152,6 +152,9 @@ type TypedMetadata struct {
 }
 
 func NewTypedMetadata(m Metadata) *TypedMetadata {
+	if tm, ok := m.(*TypedMetadata); ok {
+		return tm
+	}
 	return &TypedMetadata{m}
 }
 
