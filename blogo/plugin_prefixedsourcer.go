@@ -183,15 +183,11 @@ type prefixedSourcerFS struct {
 }
 
 func (pf *prefixedSourcerFS) Metadata() Metadata {
-	fs := make([]FS, len(pf.fileSystems), len(pf.fileSystems))
-
-	i := 0
+	var m Metadata
 	for _, v := range pf.fileSystems {
-		fs[i] = v
-		i++
+		m = JoinMetadata(m, v.Metadata())
 	}
-
-	return NewMultiFSMetadata(fs)
+	return m
 }
 
 func (pf *prefixedSourcerFS) Open(name string) (File, error) {

@@ -132,15 +132,11 @@ type multiSourcerFS struct {
 }
 
 func (pf *multiSourcerFS) Metadata() Metadata {
-	fs := make([]FS, len(pf.fileSystems), len(pf.fileSystems))
-
-	i := 0
+	var m Metadata
 	for _, v := range pf.fileSystems {
-		fs[i] = v
-		i++
+		m = JoinMetadata(m, v.Metadata())
 	}
-
-	return NewMultiFSMetadata(fs)
+	return m
 }
 
 func (mf *multiSourcerFS) Open(name string) (File, error) {

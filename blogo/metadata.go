@@ -63,30 +63,72 @@ func (m metadataMap) Delete(key string, strict ...bool) error {
 	return nil
 }
 
-type multiFSMetadata struct {
-	Metadata
-	fileSystems []FS
+type joinedMetadata struct {
+	ms []Metadata
+	m  Metadata
 }
 
-func NewMultiFSMetadata(fileSytems []FS) Metadata {
-	return &multiFSMetadata{
-		Metadata:    MetadataMap(map[string]any{}),
-		fileSystems: fileSytems,
+func JoinMetadata(ms ...Metadata) Metadata {
+	jm := []Metadata{}
+	for _, m := range ms {
+		if ms, ok := m.(*joinedMetadata); ok {
+			jm = append(jm, ms.m)
+			jm = append(jm, ms.ms...)
+		} else if m != nil {
+			jm = append(jm, m)
+		}
+	}
+	return &joinedMetadata{
+		ms: jm,
+		m:  MetadataMap(map[string]any{}),
 	}
 }
 
-func (m *multiFSMetadata) Get(key string) (any, error) {
-	if v, err := m.Metadata.Get(key); err == nil {
+func (jm *joinedMetadata) Get(key string) (any, error) {
+	if v, err := jm.m.Get(key); err == nil {
 		return v, nil
 	}
-
-	for _, m := range m.fileSystems {
-		v, err := m.Metadata().Get(key)
+	for _, m := range jm.ms {
+		v, err := m.Get(key)
 		if err == nil {
 			return v, nil
 		}
 	}
-	return nil, ErrMetadataNotFound
+	return nil, ErrMetadataNotEmpty
+}
+
+func (jm *joinedMetadata) Set(key string, v any, strict ...bool) error {
+	if _, err := jm.m.Get(key); err == nil {
+		return jm.m.Set(key, v, strict...)
+	}
+
+	for _, m := range jm.ms {
+		_, err := m.Get(key)
+		if err == nil {
+			return m.Set(key, v, strict...)
+		} else if errors.Is(err, ErrMetadataImmutable) {
+			return err
+		}
+	}
+
+	return jm.m.Set(key, v, strict...)
+}
+
+func (jm *joinedMetadata) Delete(key string, strict ...bool) error {
+	if _, err := jm.m.Get(key); err == nil {
+		return jm.m.Delete(key, strict...)
+	}
+
+	for _, m := range jm.ms {
+		_, err := m.Get(key)
+		if err == nil {
+			return m.Delete(key, strict...)
+		} else if errors.Is(err, ErrMetadataImmutable) {
+			return err
+		}
+	}
+
+	return jm.m.Delete(key, strict...)
 }
 
 type immutableMetadata struct {
@@ -105,3 +147,29 @@ func (m *immutableMetadata) Delete(key string, strict ...bool) error {
 	return ErrMetadataImmutable
 }
 
+type TypedMetadata struct {
+	Metadata
+}
+
+func NewTypedMetadata(m Metadata) TypedMetadata {
+	return TypedMetadata{m}
+}
+
+func (m TypedMetadata) GetString(key string) (string, error) {
+	return GetTyped[string](m, key)
+}
+
+func GetTyped[T any](m Metadata, key string) (T, error) {
+	var z T
+
+	v, err := m.Get(key)
+	if err != nil {
+		return z, err
+	}
+
+	if v, ok := v.(T); ok {
+		return v, nil
+	} else {
+		return z, ErrMetadataIncorrectType
+	}
+}
