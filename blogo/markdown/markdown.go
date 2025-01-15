@@ -2,7 +2,6 @@ package markdown
 
 import (
 	"io"
-	"io/fs"
 	"strings"
 
 	"github.com/yuin/goldmark"
@@ -40,7 +39,7 @@ func (p *plugin) Name() string {
 	return pluginName
 }
 
-func (p *plugin) Render(f fs.File, w io.Writer) error {
+func (p *plugin) Render(f blogo.File, w io.Writer) error {
 	stat, err := f.Stat()
 	if err != nil || !strings.HasSuffix(stat.Name(), ".md") {
 		return blogo.ErrRendererNotSupportedFile
