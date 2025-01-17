@@ -16,8 +16,6 @@
 package blogo
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"io/fs"
@@ -40,11 +38,8 @@ type prefixedSourcer struct {
 	acceptDuplicated bool
 
 	panicOnInit       bool
-	skipOnHexError    bool
 	skipOnSourceError bool
 	skipOnFSError     bool
-
-	hexFunc HexFunc
 
 	log *slog.Logger
 }
@@ -58,19 +53,7 @@ type PrefixedSourcerOpts struct {
 	NotSkipOnSourceError bool
 	NotSkipOnFSError     bool
 
-	HexFunc HexFunc
-
 	Logger *slog.Logger
-}
-
-type HexFunc = func(n int) (string, error)
-
-func hexFunc(n int) (string, error) {
-	bytes := make([]byte, n)
-	if _, err := rand.Read(bytes); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(bytes), nil
 }
 
 func NewPrefixedSourcer(opts ...PrefixedSourcerOpts) PrefixedSourcer {
@@ -81,10 +64,6 @@ func NewPrefixedSourcer(opts ...PrefixedSourcerOpts) PrefixedSourcer {
 
 	if opt.PrefixSeparator == "" {
 		opt.PrefixSeparator = "/"
-	}
-
-	if opt.HexFunc == nil {
-		opt.HexFunc = hexFunc
 	}
 
 	if opt.Logger == nil {
