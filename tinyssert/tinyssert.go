@@ -13,7 +13,7 @@
 //
 // An original copy of this file can be found at http://forge.capytal.company/loreddev/x/assert/assert.go.
 
-// # [Tiny] Assert
+// # Tiny Assert
 //
 // Minimal set of assertions functions for testing and simulation testing, all in
 // one file.
@@ -25,13 +25,13 @@
 //
 //	import (
 //	  "log"
-//	  "forge.capytal.company/loreddev/x/assert"
+//	  "forge.capytal.company/loreddev/x/tinyssert"
 //	)
 //
 //	func main() {
 //	  expected := "value"
 //	  value := "value"
-//	  log.Println(assert.Equal(expected, value)) // "true"
+//	  log.Println(tinyssert.Equal(expected, value)) // "true"
 //	}
 //
 // Or proverbially, you can create your own "assert" variable and have more control
@@ -41,18 +41,18 @@
 //
 //	import (
 //	  "log/slog"
-//	  "forge.capytal.company/loreddev/x/assert"
+//	  "forge.capytal.company/loreddev/x/tinyssert"
 //	)
 //
 //	var logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
-//	var assert = assert.NewAssertions(assert.Opts{Logger: logger})
+//	var assert = tinyssert.NewAssertions(assert.Opts{Logger: logger})
 //
 //	func main() {
 //	  expected := "value"
 //	  value := "not value"
 //	  assert.Equal(expected, value) // "expected \"value\", got \"not value\"" with the call stack and returns false
 //	}
-package assert
+package tinyssert
 
 import (
 	"fmt"

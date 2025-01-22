@@ -1,4 +1,4 @@
-# \[Tiny\] Assert
+# Tiny Assert
 
 A minimal assertion package, all in one single file that you can copy and paste
 to vendor-in and use without adding any dependencies to your project.
