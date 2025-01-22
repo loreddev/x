@@ -19,26 +19,27 @@ import (
 	iofs "io/fs"
 )
 
-func FsFS(f iofs.FS, immutable ...bool) FS {
-	var m Metadata
-	var i bool
+func FromIOFS(fsys iofs.FS, immutable ...bool) FS {
+	if fsys == nil {
+		return nil
+	}
+
+	m := MetadataMap(map[string]any{})
+	i := false
 	if len(immutable) > 0 && immutable[0] {
+		m = ImmutableMetadata(m)
 		i = true
-		m = ImmutableMetadata(MetadataMap(map[string]any{}))
-	} else {
-		i = false
-		m = MetadataMap(map[string]any{})
 	}
 
 	return &wrapperFS{
-		FS:        f,
+		fsys:      fsys,
 		metadata:  m,
 		immutable: i,
 	}
 }
 
 type wrapperFS struct {
-	iofs.FS
+	fsys      iofs.FS
 	metadata  Metadata
 	immutable bool
 }
@@ -48,23 +49,21 @@ func (f *wrapperFS) Metadata() Metadata {
 }
 
 func (f *wrapperFS) Open(name string) (File, error) {
-	file, err := f.FS.Open(name)
+	file, err := f.fsys.Open(name)
 	if err != nil {
 		return nil, err
 	}
-	return FsFile(file, f.immutable), nil
+	return FromIOFile(file, f.immutable), nil
 }
 
-func FsFile(f iofs.File, immutable ...bool) File {
-	var m Metadata
+func FromIOFile(file iofs.File, immutable ...bool) File {
+	m := MetadataMap(map[string]any{})
 	if len(immutable) > 0 && immutable[0] {
-		m = ImmutableMetadata(MetadataMap(map[string]any{}))
-	} else {
-		m = MetadataMap(map[string]any{})
+		m = ImmutableMetadata(m)
 	}
 
 	return &wrapperFile{
-		File:     f,
+		File:     file,
 		metadata: m,
 	}
 }
