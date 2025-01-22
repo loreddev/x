@@ -13,25 +13,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package blogo
+package plugins
 
 import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
+
+	"forge.capytal.company/loreddev/x/blogo/fs"
+	"forge.capytal.company/loreddev/x/blogo/plugin"
 )
 
-const plainTextPluginName = "blogo-plaintext-renderer"
+const plainTextName = "blogo-plaintext-renderer"
 
 type painText struct{}
 
-func NewPlainText() Plugin {
+func NewPlainText() plugin.Plugin {
 	return &painText{}
 }
 
 func (p *painText) Name() string {
-	return plainTextPluginName
+	return plainTextName
 }
 
 func (p *painText) Render(f fs.File, w io.Writer) error {

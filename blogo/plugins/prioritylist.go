@@ -13,43 +13,45 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package blogo
+package plugins
 
 import (
 	"cmp"
 	"slices"
+
+	"forge.capytal.company/loreddev/x/blogo/plugin"
 )
 
-const priorityGroupPluginName = "blogo-prioritygroup-group"
+const priorityGroupName = "blogo-prioritygroup-group"
 
 type priorityGroup struct {
-	plugins []Plugin
+	plugins []plugin.Plugin
 }
 
 type PriorityGroup interface {
-	PluginWithPlugins
+	plugin.WithPlugins
 }
 
-func NewPriorityGroup(plugins ...Plugin) PriorityGroup {
+func NewPriorityGroup(plugins ...plugin.Plugin) PriorityGroup {
 	return &priorityGroup{plugins}
 }
 
 func (p *priorityGroup) Name() string {
-	return priorityGroupPluginName
+	return priorityGroupName
 }
 
-func (p *priorityGroup) Use(plugin Plugin) {
+func (p *priorityGroup) Use(plugin plugin.Plugin) {
 	p.plugins = append(p.plugins, plugin)
 }
 
-func (p *priorityGroup) Plugins() []Plugin {
-	slices.SortStableFunc(p.plugins, func(a Plugin, b Plugin) int {
+func (p *priorityGroup) Plugins() []plugin.Plugin {
+	slices.SortStableFunc(p.plugins, func(a plugin.Plugin, b plugin.Plugin) int {
 		return cmp.Compare(p.getPriority(a, b), p.getPriority(b, a))
 	})
 	return p.plugins
 }
 
-func (p *priorityGroup) getPriority(plugin Plugin, cmp Plugin) int {
+func (p *priorityGroup) getPriority(plugin plugin.Plugin, cmp plugin.Plugin) int {
 	if plg, ok := plugin.(PluginWithDynamicPriority); ok {
 		return plg.Priority(cmp)
 	} else if plg, ok := plugin.(PluginWithPriority); ok {
@@ -60,11 +62,11 @@ func (p *priorityGroup) getPriority(plugin Plugin, cmp Plugin) int {
 }
 
 type PluginWithPriority interface {
-	Plugin
+	plugin.Plugin
 	Priority() int
 }
 
 type PluginWithDynamicPriority interface {
-	Plugin
-	Priority(Plugin) int
+	plugin.Plugin
+	Priority(plugin.Plugin) int
 }

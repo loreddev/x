@@ -13,25 +13,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package blogo
+package plugins
 
 import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"log/slog"
+
+	"forge.capytal.company/loreddev/x/blogo/fs"
+	"forge.capytal.company/loreddev/x/blogo/plugin"
 )
 
-const multiSourcerPluginName = "blogo-multisourcer-sourcer"
+const multiSourcerName = "blogo-multisourcer-sourcer"
 
 type MultiSourcer interface {
-	SourcerPlugin
-	PluginWithPlugins
+	plugin.Sourcer
+	plugin.WithPlugins
 }
 
 type multiSourcer struct {
-	sources []SourcerPlugin
+	sources []plugin.Sourcer
 
 	panicOnInit       bool
 	skipOnSourceError bool
@@ -57,10 +59,10 @@ func NewMultiSourcer(opts ...MultiSourcerOpts) MultiSourcer {
 	if opt.Logger == nil {
 		opt.Logger = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
 	}
-	opt.Logger = opt.Logger.WithGroup(multiSourcerPluginName)
+	opt.Logger = opt.Logger.WithGroup(multiSourcerName)
 
 	return &multiSourcer{
-		sources: []SourcerPlugin{},
+		sources: []plugin.Sourcer{},
 
 		panicOnInit:       !opt.NotPanicOnInit,
 		skipOnSourceError: !opt.NotSkipOnSourceError,
@@ -70,36 +72,36 @@ func NewMultiSourcer(opts ...MultiSourcerOpts) MultiSourcer {
 	}
 }
 
-func (p *multiSourcer) Name() string {
-	return multiSourcerPluginName
+func (s *multiSourcer) Name() string {
+	return multiSourcerName
 }
 
-func (p *multiSourcer) Use(plugin Plugin) {
-	log := p.log.With(slog.String("plugin", plugin.Name()))
+func (s *multiSourcer) Use(p plugin.Plugin) {
+	log := s.log.With(slog.String("plugin", p.Name()))
 
-	if plg, ok := plugin.(SourcerPlugin); ok {
+	if plg, ok := p.(plugin.Sourcer); ok {
 		log.Debug("Added sourcer plugin")
-		p.sources = append(p.sources, plg)
+		s.sources = append(s.sources, plg)
 	} else {
-		m := fmt.Sprintf("failed to add plugin %q, since it doesn't implement SourcerPlugin", plugin.Name())
+		m := fmt.Sprintf("failed to add plugin %q, since it doesn't implement plugin.Sourcer", p.Name())
 		log.Error(m)
-		if p.panicOnInit {
+		if s.panicOnInit {
 			panic(fmt.Sprintf("%s: %s", p.Name(), m))
 		}
 	}
 }
 
-func (p *multiSourcer) Source() (FS, error) {
-	log := p.log
+func (s *multiSourcer) Source() (fs.FS, error) {
+	log := s.log
 
-	fileSystems := []FS{}
+	fileSystems := []fs.FS{}
 
-	for _, s := range p.sources {
-		log = log.With(slog.String("plugin", p.Name()))
+	for _, ps := range s.sources {
+		log = log.With(slog.String("plugin", ps.Name()))
 		log.Info("Sourcing file system of plugin")
 
-		f, err := s.Source()
-		if err != nil && p.skipOnSourceError {
+		f, err := ps.Source()
+		if err != nil && s.skipOnSourceError {
 			log.Error(
 				"Failed to source file system of plugin, skipping",
 				slog.String("error", err.Error()),
@@ -115,31 +117,31 @@ func (p *multiSourcer) Source() (FS, error) {
 		fileSystems = append(fileSystems, f)
 	}
 
-	f := make([]FS, len(fileSystems), len(fileSystems))
+	f := make([]fs.FS, len(fileSystems))
 	for i := range f {
 		f[i] = fileSystems[i]
 	}
 
 	return &multiSourcerFS{
 		fileSystems: f,
-		skipOnError: p.skipOnFSError,
+		skipOnError: s.skipOnFSError,
 	}, nil
 }
 
 type multiSourcerFS struct {
-	fileSystems []FS
+	fileSystems []fs.FS
 	skipOnError bool
 }
 
-func (pf *multiSourcerFS) Metadata() Metadata {
-	var m Metadata
+func (pf *multiSourcerFS) Metadata() fs.Metadata {
+	var m fs.Metadata
 	for _, v := range pf.fileSystems {
-		m = JoinMetadata(m, v.Metadata())
+		m = fs.JoinMetadata(m, v.Metadata())
 	}
 	return m
 }
 
-func (mf *multiSourcerFS) Open(name string) (File, error) {
+func (mf *multiSourcerFS) Open(name string) (fs.File, error) {
 	for _, f := range mf.fileSystems {
 		file, err := f.Open(name)
 

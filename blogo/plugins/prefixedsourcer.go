@@ -13,26 +13,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package blogo
+package plugins
 
 import (
 	"fmt"
 	"io"
-	"io/fs"
 	"log/slog"
 	"strings"
+
+	"forge.capytal.company/loreddev/x/blogo/fs"
+	"forge.capytal.company/loreddev/x/blogo/plugin"
 )
 
-const prefixedSourcerPluginName = "blogo-prefixedsourcer-sourcer"
+const prefixedSourcerName = "blogo-prefixedsourcer-sourcer"
 
 type PrefixedSourcer interface {
-	SourcerPlugin
-	PluginWithPlugins
-	UseNamed(string, Plugin)
+	plugin.Sourcer
+	plugin.WithPlugins
+	UseNamed(string, plugin.Plugin)
 }
 
 type prefixedSourcer struct {
-	sources map[string]SourcerPlugin
+	sources map[string]plugin.Sourcer
 
 	prefixSeparator  string
 	acceptDuplicated bool
@@ -69,10 +71,10 @@ func NewPrefixedSourcer(opts ...PrefixedSourcerOpts) PrefixedSourcer {
 	if opt.Logger == nil {
 		opt.Logger = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
 	}
-	opt.Logger = opt.Logger.WithGroup(prefixedSourcerPluginName)
+	opt.Logger = opt.Logger.WithGroup(prefixedSourcerName)
 
 	return &prefixedSourcer{
-		sources: map[string]SourcerPlugin{},
+		sources: map[string]plugin.Sourcer{},
 
 		prefixSeparator:  opt.PrefixSeparator,
 		acceptDuplicated: opt.AcceptDuplicated,
@@ -85,56 +87,56 @@ func NewPrefixedSourcer(opts ...PrefixedSourcerOpts) PrefixedSourcer {
 	}
 }
 
-func (p *prefixedSourcer) Name() string {
-	return prefixedSourcerPluginName
+func (s *prefixedSourcer) Name() string {
+	return prefixedSourcerName
 }
 
-func (p *prefixedSourcer) Use(plugin Plugin) {
-	p.UseNamed(plugin.Name(), plugin)
+func (s *prefixedSourcer) Use(plugin plugin.Plugin) {
+	s.UseNamed(plugin.Name(), plugin)
 }
 
-func (p *prefixedSourcer) UseNamed(prefix string, plugin Plugin) {
-	log := p.log.With(slog.String("plugin", plugin.Name()), slog.String("prefix", prefix))
+func (s *prefixedSourcer) UseNamed(prefix string, p plugin.Plugin) {
+	log := s.log.With(slog.String("plugin", p.Name()), slog.String("prefix", prefix))
 
-	var sourcer SourcerPlugin
-	if plg, ok := plugin.(SourcerPlugin); ok {
-		sourcer = plg
+	var sourcer plugin.Sourcer
+	if ps, ok := p.(plugin.Sourcer); ok {
+		sourcer = ps
 	} else {
-		m := fmt.Sprintf("failed to add plugin %q (with prefix %q), since it doesn't implement SourcerPlugin", plugin.Name(), prefix)
+		m := fmt.Sprintf("failed to add plugin %q (with prefix %q), since it doesn't implement SourcerPlugin", p.Name(), prefix)
 		log.Error(m)
-		if p.panicOnInit {
-			panic(fmt.Sprintf("%s: %s", multiRendererPluginName, m))
+		if s.panicOnInit {
+			panic(fmt.Sprintf("%s: %s", prefixedSourcerName, m))
 		}
 	}
 
-	if _, ok := p.sources[prefix]; ok && !p.acceptDuplicated {
+	if _, ok := s.sources[prefix]; ok && !s.acceptDuplicated {
 		m := fmt.Sprintf(
 			"duplicated prefix (%q) for plugin %q",
 			prefix,
-			plugin.Name(),
+			p.Name(),
 		)
 		log.Error(m)
-		if p.panicOnInit {
-			panic(fmt.Sprintf("%s: %s", multiRendererPluginName, m))
+		if s.panicOnInit {
+			panic(fmt.Sprintf("%s: %s", prefixedSourcerName, m))
 		}
 		return
 	}
 
 	log.Debug(fmt.Sprintf("Added sourcer plugin, with prefix %q", prefix))
-	p.sources[prefix] = sourcer
+	s.sources[prefix] = sourcer
 }
 
-func (p *prefixedSourcer) Source() (FS, error) {
-	log := p.log
+func (s *prefixedSourcer) Source() (fs.FS, error) {
+	log := s.log
 
-	fileSystems := make(map[string]FS, len(p.sources))
+	fileSystems := make(map[string]fs.FS, len(s.sources))
 
-	for a, s := range p.sources {
-		log = log.With(slog.String("plugin", p.Name()), slog.String("prefix", a))
+	for a, ps := range s.sources {
+		log = log.With(slog.String("plugin", ps.Name()), slog.String("prefix", a))
 		log.Info("Sourcing file system of plugin")
 
-		f, err := s.Source()
-		if err != nil && p.skipOnSourceError {
+		f, err := ps.Source()
+		if err != nil && s.skipOnSourceError {
 			log.Error(
 				"Failed to source file system of plugin, skipping",
 				slog.String("error", err.Error()),
@@ -152,24 +154,24 @@ func (p *prefixedSourcer) Source() (FS, error) {
 
 	return &prefixedSourcerFS{
 		fileSystems:     fileSystems,
-		prefixSeparator: p.prefixSeparator,
+		prefixSeparator: s.prefixSeparator,
 	}, nil
 }
 
 type prefixedSourcerFS struct {
-	fileSystems     map[string]FS
+	fileSystems     map[string]fs.FS
 	prefixSeparator string
 }
 
-func (pf *prefixedSourcerFS) Metadata() Metadata {
-	var m Metadata
+func (pf *prefixedSourcerFS) Metadata() fs.Metadata {
+	var m fs.Metadata
 	for _, v := range pf.fileSystems {
-		m = JoinMetadata(m, v.Metadata())
+		m = fs.JoinMetadata(m, v.Metadata())
 	}
 	return m
 }
 
-func (pf *prefixedSourcerFS) Open(name string) (File, error) {
+func (pf *prefixedSourcerFS) Open(name string) (fs.File, error) {
 	prefix, path, found := strings.Cut(name, pf.prefixSeparator)
 	if !found {
 		return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrNotExist}

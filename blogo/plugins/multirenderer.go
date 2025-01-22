@@ -13,28 +13,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package blogo
+package plugins
 
 import (
 	"bytes"
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"log/slog"
+
+	"forge.capytal.company/loreddev/x/blogo/fs"
+	"forge.capytal.company/loreddev/x/blogo/plugin"
 )
 
 var ErrRendererNotSupportedFile = errors.New("this file is not supported by renderer")
 
-const multiRendererPluginName = "blogo-multirenderer-renderer"
+const multiRendererName = "blogo-multirenderer-renderer"
 
 type MultiRenderer interface {
-	RendererPlugin
-	PluginWithPlugins
+	plugin.Renderer
+	plugin.WithPlugins
 }
 
 type multiRenderer struct {
-	renderers []RendererPlugin
+	renderers []plugin.Renderer
 
 	skipOnError bool
 	panicOnInit bool
@@ -57,10 +59,10 @@ func NewMultiRenderer(opts ...MultiRendererOpts) MultiRenderer {
 	if opt.Logger == nil {
 		opt.Logger = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
 	}
-	opt.Logger = opt.Logger.WithGroup(multiRendererPluginName)
+	opt.Logger = opt.Logger.WithGroup(multiRendererName)
 
 	return &multiRenderer{
-		renderers: []RendererPlugin{},
+		renderers: []plugin.Renderer{},
 
 		skipOnError: !opt.NotSkipOnError,
 		panicOnInit: !opt.NotPanicOnInit,
@@ -69,40 +71,40 @@ func NewMultiRenderer(opts ...MultiRendererOpts) MultiRenderer {
 	}
 }
 
-func (p *multiRenderer) Name() string {
-	return multiRendererPluginName
+func (r *multiRenderer) Name() string {
+	return multiRendererName
 }
 
-func (p *multiRenderer) Use(plugin Plugin) {
-	log := p.log.With(slog.String("plugin", plugin.Name()))
+func (r *multiRenderer) Use(p plugin.Plugin) {
+	log := r.log.With(slog.String("plugin", p.Name()))
 
-	if plg, ok := plugin.(RendererPlugin); ok {
+	if pr, ok := p.(plugin.Renderer); ok {
 		log.Debug("Added renderer plugin")
-		p.renderers = append(p.renderers, plg)
+		r.renderers = append(r.renderers, pr)
 	} else {
-		m := fmt.Sprintf("failed to add plugin %q, since it doesn't implement RendererPlugin", plugin.Name())
+		m := fmt.Sprintf("failed to add plugin %q, since it doesn't implement plugin.Renderer", p.Name())
 		log.Error(m)
-		if p.panicOnInit {
-			panic(fmt.Sprintf("%s: %s", p.Name(), m))
+		if r.panicOnInit {
+			panic(fmt.Sprintf("%s: %s", r.Name(), m))
 		}
 	}
 }
 
-func (p *multiRenderer) Render(f File, w io.Writer) error {
-	mf := newMultiRendererFile(f)
-	for _, r := range p.renderers {
-		log := p.log.With(slog.String("plugin", r.Name()))
+func (r *multiRenderer) Render(src fs.File, w io.Writer) error {
+	mf := newMultiRendererFile(src)
+	for _, pr := range r.renderers {
+		log := r.log.With(slog.String("plugin", pr.Name()))
 
 		log.Debug("Trying to render with plugin")
-		err := r.Render(f, w)
+		err := pr.Render(src, w)
 
 		if err == nil {
 			break
 		}
 
-		if !p.skipOnError && !errors.Is(err, ErrRendererNotSupportedFile) {
+		if !r.skipOnError && !errors.Is(err, ErrRendererNotSupportedFile) {
 			log.Error("Failed to render using plugin", slog.String("error", err.Error()))
-			return errors.Join(fmt.Errorf("failed to render using plugin %q", p.Name()), err)
+			return errors.Join(fmt.Errorf("failed to render using plugin %q", pr.Name()), err)
 		}
 
 		log.Debug("Unable to render using plugin", slog.String("error", err.Error()))

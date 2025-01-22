@@ -13,19 +13,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package blogo
+package plugins
 
 import (
 	"bytes"
 	"fmt"
 	"io"
 	"log/slog"
+
+	"forge.capytal.company/loreddev/x/blogo/fs"
+	"forge.capytal.company/loreddev/x/blogo/plugin"
 )
 
 const foldingRendererPluginName = "blogo-foldingrenderer-renderer"
 
 type foldingRenderer struct {
-	plugins []RendererPlugin
+	plugins []plugin.Renderer
 
 	panicOnInit bool
 
@@ -39,8 +42,8 @@ type FoldingRendererOpts struct {
 }
 
 type FoldingRenderer interface {
-	PluginWithPlugins
-	RendererPlugin
+	plugin.WithPlugins
+	plugin.Renderer
 }
 
 func NewFoldingRenderer(opts ...FoldingRendererOpts) FoldingRenderer {
@@ -55,32 +58,32 @@ func NewFoldingRenderer(opts ...FoldingRendererOpts) FoldingRenderer {
 	opt.Logger = opt.Logger.WithGroup(foldingRendererPluginName)
 
 	return &foldingRenderer{
-		plugins: []RendererPlugin{},
+		plugins: []plugin.Renderer{},
 
 		log: opt.Logger,
 	}
 }
 
-func (p *foldingRenderer) Name() string {
+func (r *foldingRenderer) Name() string {
 	return foldingRendererPluginName
 }
 
-func (p *foldingRenderer) Use(plugin Plugin) {
-	log := p.log.With(slog.String("plugin", plugin.Name()))
+func (r *foldingRenderer) Use(p plugin.Plugin) {
+	log := r.log.With(slog.String("plugin", p.Name()))
 
-	if plg, ok := plugin.(RendererPlugin); ok {
-		p.plugins = append(p.plugins, plg)
+	if pr, ok := p.(plugin.Renderer); ok {
+		r.plugins = append(r.plugins, pr)
 	} else {
-		m := fmt.Sprintf("failed to add plugin %q, since it doesn't implement RendererPlugin", plugin.Name())
+		m := fmt.Sprintf("failed to add plugin %q, since it doesn't implement plugin.Renderer", p.Name())
 		log.Error(m)
-		if p.panicOnInit {
-			panic(fmt.Sprintf("%s: %s", multiRendererPluginName, m))
+		if r.panicOnInit {
+			panic(fmt.Sprintf("%s: %s", foldingRendererPluginName, m))
 		}
 	}
 }
 
-func (p *foldingRenderer) Render(src File, w io.Writer) error {
-	if len(p.plugins) == 0 {
+func (r *foldingRenderer) Render(src fs.File, w io.Writer) error {
+	if len(r.plugins) == 0 {
 		_, err := io.Copy(w, src)
 		return err
 	}
@@ -90,8 +93,8 @@ func (p *foldingRenderer) Render(src File, w io.Writer) error {
 		return err
 	}
 
-	for _, r := range p.plugins {
-		err := r.Render(f, f)
+	for _, p := range r.plugins {
+		err := p.Render(f, f)
 		if err != nil {
 			return err
 		}
@@ -106,12 +109,12 @@ func (p *foldingRenderer) Render(src File, w io.Writer) error {
 }
 
 type foldingFile struct {
-	File
+	fs.File
 	read   *bytes.Buffer
 	writer *bytes.Buffer
 }
 
-func newFoldignFile(f File) (*foldingFile, error) {
+func newFoldignFile(f fs.File) (*foldingFile, error) {
 	var r, w bytes.Buffer
 
 	if _, err := io.Copy(&r, f); err != nil {

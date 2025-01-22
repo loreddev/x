@@ -13,15 +13,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package blogo
+package plugins
 
-import "io/fs"
+import (
+	"forge.capytal.company/loreddev/x/blogo/fs"
+	"forge.capytal.company/loreddev/x/blogo/plugin"
+)
 
 const emptySourcerPluginName = "blogo-empty-sourcer"
 
 type emptySourcer struct{}
 
-func NewEmptySourcer() Plugin {
+func NewEmptySourcer() plugin.Plugin {
 	return &emptySourcer{}
 }
 
@@ -34,6 +37,10 @@ func (p *emptySourcer) Source() (fs.FS, error) {
 }
 
 type emptyFS struct{}
+
+func (f emptyFS) Metadata() fs.Metadata {
+	return fs.MetadataMap(map[string]any{})
+}
 
 func (f emptyFS) Open(name string) (fs.File, error) {
 	return nil, fs.ErrNotExist
