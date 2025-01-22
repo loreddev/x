@@ -13,33 +13,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package blogo
+package plugin
 
-import (
-	"io"
-)
-
-type Plugin interface {
-	Name() string
-}
-
-type PluginWithPlugins interface {
-	Plugin
-	Use(Plugin)
-}
+const pluginGroupName = "blogo-plugingroup-group"
 
 type PluginGroup interface {
 	Plugin
-	PluginWithPlugins
+	WithPlugins
 	Plugins() []Plugin
 }
 
-type RendererPlugin interface {
-	Plugin
-	Render(src File, out io.Writer) error
+type pluginGroup struct {
+	plugins []Plugin
 }
 
-type SourcerPlugin interface {
-	Plugin
-	Source() (FS, error)
+func NewPluginGroup(plugins ...Plugin) PluginGroup {
+	return &pluginGroup{plugins}
+}
+
+func (p *pluginGroup) Name() string {
+	return pluginGroupName
+}
+
+func (p *pluginGroup) Use(plugin Plugin) {
+	p.plugins = append(p.plugins, plugin)
+}
+
+func (p *pluginGroup) Plugins() []Plugin {
+	return p.plugins
 }

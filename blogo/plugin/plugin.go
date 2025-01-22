@@ -13,26 +13,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package blogo
+package plugin
 
-const pluginGroupPluginName = "blogo-plugingroup-group"
+import (
+	"io"
 
-type pluginGroup struct {
-	plugins []Plugin
+	"forge.capytal.company/loreddev/x/blogo/fs"
+)
+
+type Plugin interface {
+	Name() string
 }
 
-func NewPluginGroup(plugins ...Plugin) PluginGroup {
-	return &pluginGroup{plugins}
+type WithPlugins interface {
+	Plugin
+	Use(Plugin)
 }
 
-func (p *pluginGroup) Name() string {
-	return pluginGroupPluginName
+type Renderer interface {
+	Plugin
+	Render(src fs.File, out io.Writer) error
 }
 
-func (p *pluginGroup) Use(plugin Plugin) {
-	p.plugins = append(p.plugins, plugin)
-}
-
-func (p *pluginGroup) Plugins() []Plugin {
-	return p.plugins
+type Sourcer interface {
+	Plugin
+	Source() (fs.FS, error)
 }
