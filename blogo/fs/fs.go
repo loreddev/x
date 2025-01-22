@@ -19,16 +19,6 @@ import (
 	iofs "io/fs"
 )
 
-type FS interface {
-	Metadata() Metadata
-	Open(name string) (File, error)
-}
-
-type File interface {
-	iofs.File
-	Metadata() Metadata
-}
-
 // Alias for "io/fs"
 var (
 	ErrInvalid    = iofs.ErrInvalid    // "invalid argument"
@@ -37,6 +27,54 @@ var (
 	ErrNotExist   = iofs.ErrNotExist   // "file does not exist"
 	ErrClosed     = iofs.ErrClosed     // "file already closed"
 )
+
+// Provides access to a hierarchical file system, similar to [iofs.FS]. Implementations
+// can load files, fetch them from network, read from disk, as they are opened/on demand
+// if they seem fit to do so.
+//
+// A file system may implement additional interfaces such as [ReadFileFS].
+type FS interface {
+	// Returns [Metadata] about the file system.
+	//
+	// Implementations should return a empty [Metadata] instead of a nil value for when
+	// the file system doesn't have any additional metadata about it or when a error
+	// occurs when getting said metadata.
+	//
+	// [plugin.Sourcer] may add prefixes to their metadata keys.
+	Metadata() Metadata
+	// Open, similar to [iofs.File.Open], opens the named file.
+	//
+	// When it returns an error, it should be of type [*PathError] with the Op field
+	// set to "open", the Path field set to name, and the Err field describing the problem.
+	//
+	// It should reject attempts of opening names that do not satisfy [ValidPath], returning
+	// a [*PathError] with Err set to [ErrInvalid] or [ErrNotExist]
+	//
+	// Implementations may find the file on demand or fetch them via http request, depending on
+	// the underlying source of the file.
+	Open(name string) (File, error)
+}
+
+// Provides access to a single file, similar to [iofs.FS]. Implementations may read the file
+// on demand and/or fetch it's contents and data from a outside source such as via HTTP requests,
+// depending on the underlying source of the file.
+//
+// Directory files should also implement [ReadDirFile]. A file may implement [io.ReaderAt] or
+// [io.Seeker] as optimizations.
+type File interface {
+	// Returns [Metadata] about the file.
+	//
+	// Implementations should return a empty [Metadata] instead of a nil value for when
+	// the file doesn't have any additional metadata about it or when a error occurs while getting
+	// said metadata.
+	//
+	// [plugin.Sourcer] may add prefixes to their metadata keys.
+	Metadata() Metadata
+
+	Stat() (FileInfo, error)
+	Read([]byte) (int, error)
+	Close() error
+}
 
 // Alias for "io/fs"
 func FormatDirEntry(dir DirEntry) string { return iofs.FormatDirEntry(dir) }
