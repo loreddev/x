@@ -19,6 +19,8 @@ import (
 	iofs "io/fs"
 )
 
+// Wraps the provided [iofs.FS] file system so it can be used as a file system for blogo.
+// [Metadata] from this [FS] will be empty, and by default, mutable.
 func FromIOFS(fsys iofs.FS, immutable ...bool) FS {
 	if fsys == nil {
 		return nil
@@ -56,6 +58,8 @@ func (f *wrapperFS) Open(name string) (File, error) {
 	return FromIOFile(file, f.immutable), nil
 }
 
+// Wraps the provided [iofs.File] so it can be used as a file system for blogo.
+// [Metadata] from this [File] will be empty, and by default, mutable.
 func FromIOFile(file iofs.File, immutable ...bool) File {
 	m := MetadataMap(map[string]any{})
 	if len(immutable) > 0 && immutable[0] {
