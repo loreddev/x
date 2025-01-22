@@ -16,10 +16,8 @@
 package fs
 
 import (
-	"io/fs"
+	iofs "io/fs"
 )
-
-var ErrNotExist = fs.ErrNotExist
 
 type FS interface {
 	Metadata() Metadata
@@ -27,65 +25,44 @@ type FS interface {
 }
 
 type File interface {
-	fs.File
+	iofs.File
 	Metadata() Metadata
 }
 
-type wrapperFS struct {
-	fs.FS
-	metadata  Metadata
-	immutable bool
-}
+// Alias for "io/fs"
+var (
+	ErrInvalid    = iofs.ErrInvalid    // "invalid argument"
+	ErrPermission = iofs.ErrPermission // "permission denied"
+	ErrExist      = iofs.ErrExist      // "file already exists"
+	ErrNotExist   = iofs.ErrNotExist   // "file does not exist"
+	ErrClosed     = iofs.ErrClosed     // "file already closed"
+)
 
-func FsFS(f fs.FS, immutable ...bool) FS {
-	var m Metadata
-	var i bool
-	if len(immutable) > 0 && immutable[0] {
-		i = true
-		m = ImmutableMetadata(MetadataMap(map[string]any{}))
-	} else {
-		i = false
-		m = MetadataMap(map[string]any{})
-	}
+// Alias for "io/fs"
+func FormatDirEntry(dir DirEntry) string { return iofs.FormatDirEntry(dir) }
 
-	return &wrapperFS{
-		FS:        f,
-		metadata:  m,
-		immutable: i,
-	}
-}
+// Alias for "io/fs"
+func FormatFileInfo(info FileInfo) string { return iofs.FormatFileInfo(info) }
 
-func (f *wrapperFS) Metadata() Metadata {
-	return f.metadata
-}
+// TODO: func Glob(fsys FS, pattern string) (matches []string, err error) { return iofs.Glob(fsys, pattern) }
+// TODO: func ReadFile(fsys FS, name string) ([]byte, error) {return iofs.ReadFile(fsys, name)}
 
-func (f *wrapperFS) Open(name string) (File, error) {
-	file, err := f.FS.Open(name)
-	if err != nil {
-		return nil, err
-	}
-	return FsFile(file, f.immutable), nil
-}
+// Alias for "io/fs"
+func ValidPath(name string) bool { return iofs.ValidPath(name) }
 
-type wrapperFile struct {
-	fs.File
-	metadata Metadata
-}
+// TODO: func WalkDir(fsys FS, root string, fn WalkDirFunc) error { return iofs.WalkDir(fsys, root, fn) }
 
-func FsFile(f fs.File, immutable ...bool) File {
-	var m Metadata
-	if len(immutable) > 0 && immutable[0] {
-		m = ImmutableMetadata(MetadataMap(map[string]any{}))
-	} else {
-		m = MetadataMap(map[string]any{})
-	}
-
-	return &wrapperFile{
-		File:     f,
-		metadata: m,
-	}
-}
-
-func (f *wrapperFile) Metadata() Metadata {
-	return f.metadata
-}
+// Alias for "io/fs"
+type (
+	DirEntry    = iofs.DirEntry
+	FileInfo    = iofs.FileInfo
+	FileMode    = iofs.FileMode
+	GlobFS      = iofs.GlobFS
+	PathError   = iofs.PathError
+	ReadDirFS   = iofs.ReadDirFS
+	ReadDirFile = iofs.ReadDirFile
+	ReadFileFS  = iofs.ReadFileFS
+	StatFS      = iofs.StatFS
+	SubFS       = iofs.StatFS
+	WalkDirFunc = iofs.WalkDirFunc
+)
