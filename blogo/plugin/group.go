@@ -17,7 +17,7 @@ package plugin
 
 const pluginGroupName = "blogo-plugingroup-group"
 
-type PluginGroup interface {
+type Group interface {
 	Plugin
 	WithPlugins
 	Plugins() []Plugin
@@ -27,7 +27,7 @@ type pluginGroup struct {
 	plugins []Plugin
 }
 
-func NewPluginGroup(plugins ...Plugin) PluginGroup {
+func NewGroup(plugins ...Plugin) Group {
 	return &pluginGroup{plugins}
 }
 
