@@ -43,7 +43,6 @@ func NewMultiRenderer(opts ...MultiRendererOpts) MultiRenderer {
 	}
 
 	return &multiRenderer{
-		panicOnInit: !opt.NotPanicOnInit,
 		plugins: []plugin.Renderer{},
 
 		assert: opt.Assertions,
@@ -83,11 +82,6 @@ func (r *multiRenderer) Use(p plugin.Plugin) {
 		log.Debug("Added renderer plugin")
 		r.plugins = append(r.plugins, pr)
 	} else {
-		m := fmt.Sprintf("failed to add plugin %q, since it doesn't implement plugin.Renderer", p.Name())
-		log.Error(m)
-		if r.panicOnInit {
-			panic(fmt.Sprintf("%s: %s", r.Name(), m))
-		}
 		log.Error(fmt.Sprintf(
 			"Failed to add plugin %q, since it doesn't implement plugin.Renderer",
 			p.Name(),
