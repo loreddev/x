@@ -24,6 +24,7 @@ import (
 
 	"forge.capytal.company/loreddev/x/blogo/metadata"
 	"forge.capytal.company/loreddev/x/blogo/plugin"
+	"forge.capytal.company/loreddev/x/tinyssert"
 )
 
 const multiSourcerName = "blogo-multisourcer-sourcer"
@@ -34,10 +35,12 @@ func NewMultiSourcer(opts ...MultiSourcerOpts) MultiSourcer {
 		opt = opts[0]
 	}
 
+	if opt.Assertions == nil {
+		opt.Assertions = tinyssert.NewDisabledAssertions()
+	}
 	if opt.Logger == nil {
 		opt.Logger = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
 	}
-	opt.Logger = opt.Logger.WithGroup(multiSourcerName)
 
 	return &multiSourcer{
 		plugins: []plugin.Sourcer{},
@@ -77,6 +80,10 @@ func (s *multiSourcer) Name() string {
 }
 
 func (s *multiSourcer) Use(p plugin.Plugin) {
+	s.assert.NotNil(p)
+	s.assert.NotNil(s.plugins)
+	s.assert.NotNil(s.log)
+
 	log := s.log.With(slog.String("plugin", p.Name()))
 
 	if plg, ok := p.(plugin.Sourcer); ok {
@@ -91,6 +98,9 @@ func (s *multiSourcer) Use(p plugin.Plugin) {
 }
 
 func (s *multiSourcer) Source() (fs.FS, error) {
+	s.assert.NotNil(s.plugins)
+	s.assert.NotNil(s.log)
+
 	log := s.log.With()
 
 	fileSystems := []fs.FS{}
