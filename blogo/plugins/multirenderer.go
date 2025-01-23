@@ -24,6 +24,7 @@ import (
 	"log/slog"
 
 	"forge.capytal.company/loreddev/x/blogo/plugin"
+	"forge.capytal.company/loreddev/x/tinyssert"
 )
 
 var ErrRendererNotSupportedFile = errors.New("this file is not supported by renderer")
@@ -36,18 +37,20 @@ func NewMultiRenderer(opts ...MultiRendererOpts) MultiRenderer {
 		opt = opts[0]
 	}
 
+	if opt.Assertions == nil {
+		opt.Assertions = tinyssert.NewDisabledAssertions()
+	}
 	if opt.Logger == nil {
 		opt.Logger = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
 	}
-	opt.Logger = opt.Logger.WithGroup(multiRendererName)
 
 	return &multiRenderer{
-		renderers: []plugin.Renderer{},
-
 		skipOnError: !opt.NotSkipOnError,
 		panicOnInit: !opt.NotPanicOnInit,
+		plugins: []plugin.Renderer{},
 
-		log: opt.Logger,
+		assert: opt.Assertions,
+		log:    opt.Logger,
 	}
 }
 
@@ -57,12 +60,14 @@ type MultiRenderer interface {
 }
 
 type MultiRendererOpts struct {
+	Assertions tinyssert.Assertions
 	Logger     *slog.Logger
 }
 
 type multiRenderer struct {
 	plugins []plugin.Renderer
 
+	assert tinyssert.Assertions
 	log    *slog.Logger
 }
 
@@ -71,6 +76,10 @@ func (r *multiRenderer) Name() string {
 }
 
 func (r *multiRenderer) Use(p plugin.Plugin) {
+	r.assert.NotNil(p)
+	r.assert.NotNil(r.plugins)
+	r.assert.NotNil(r.log)
+
 	log := r.log.With(slog.String("plugin", p.Name()))
 
 	if pr, ok := p.(plugin.Renderer); ok {
@@ -82,10 +91,21 @@ func (r *multiRenderer) Use(p plugin.Plugin) {
 		if r.panicOnInit {
 			panic(fmt.Sprintf("%s: %s", r.Name(), m))
 		}
+		log.Error(fmt.Sprintf(
+			"Failed to add plugin %q, since it doesn't implement plugin.Renderer",
+			p.Name(),
+		))
 	}
 }
 
 func (r *multiRenderer) Render(src fs.File, w io.Writer) error {
+	r.assert.NotNil(r.plugins)
+	r.assert.NotNil(r.log)
+	r.assert.NotNil(src)
+	r.assert.NotNil(w)
+
+	log := r.log.With()
+
 	mf := newMultiRendererFile(src)
 
 	for _, pr := range r.plugins {
