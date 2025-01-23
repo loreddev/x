@@ -131,6 +131,7 @@ func (b *blogo) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if b.server != nil {
 		b.server.ServeHTTP(w, r)
+		return
 	}
 
 	log := b.log.With()
