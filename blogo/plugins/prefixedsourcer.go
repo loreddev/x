@@ -28,37 +28,6 @@ import (
 
 const prefixedSourcerName = "blogo-prefixedsourcer-sourcer"
 
-type PrefixedSourcer interface {
-	plugin.Sourcer
-	plugin.WithPlugins
-	UseNamed(string, plugin.Plugin)
-}
-
-type prefixedSourcer struct {
-	sources map[string]plugin.Sourcer
-
-	prefixSeparator  string
-	acceptDuplicated bool
-
-	panicOnInit       bool
-	skipOnSourceError bool
-	skipOnFSError     bool
-
-	log *slog.Logger
-}
-
-type PrefixedSourcerOpts struct {
-	PrefixSeparator  string
-	AcceptDuplicated bool
-
-	NotPanicOnInit       bool
-	NotSkipOnHexError    bool
-	NotSkipOnSourceError bool
-	NotSkipOnFSError     bool
-
-	Logger *slog.Logger
-}
-
 func NewPrefixedSourcer(opts ...PrefixedSourcerOpts) PrefixedSourcer {
 	opt := PrefixedSourcerOpts{}
 	if len(opts) > 0 {
@@ -72,20 +41,45 @@ func NewPrefixedSourcer(opts ...PrefixedSourcerOpts) PrefixedSourcer {
 	if opt.Logger == nil {
 		opt.Logger = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
 	}
-	opt.Logger = opt.Logger.WithGroup(prefixedSourcerName)
 
 	return &prefixedSourcer{
-		sources: map[string]plugin.Sourcer{},
+		plugins: map[string]plugin.Sourcer{},
 
 		prefixSeparator:  opt.PrefixSeparator,
 		acceptDuplicated: opt.AcceptDuplicated,
 
-		panicOnInit:       !opt.NotPanicOnInit,
-		skipOnSourceError: !opt.NotSkipOnSourceError,
-		skipOnFSError:     !opt.NotSkipOnFSError,
+		skipOnSourceError: opt.SkipOnSourceError,
+		skipOnFSError:     opt.SkipOnFSError,
 
 		log: opt.Logger,
 	}
+}
+
+type PrefixedSourcerOpts struct {
+	PrefixSeparator  string
+	AcceptDuplicated bool
+
+	SkipOnSourceError bool
+	SkipOnFSError     bool
+
+	Logger     *slog.Logger
+}
+type PrefixedSourcer interface {
+	plugin.Sourcer
+	plugin.WithPlugins
+	UseNamed(string, plugin.Plugin)
+}
+
+type prefixedSourcer struct {
+	plugins map[string]plugin.Sourcer
+
+	prefixSeparator  string
+	acceptDuplicated bool
+
+	skipOnSourceError bool
+	skipOnFSError     bool
+
+	log    *slog.Logger
 }
 
 func (s *prefixedSourcer) Name() string {
@@ -98,55 +92,43 @@ func (s *prefixedSourcer) Use(plugin plugin.Plugin) {
 
 func (s *prefixedSourcer) UseNamed(prefix string, p plugin.Plugin) {
 	log := s.log.With(slog.String("plugin", p.Name()), slog.String("prefix", prefix))
+	log.Debug("Adding plugin")
 
 	var sourcer plugin.Sourcer
 	if ps, ok := p.(plugin.Sourcer); ok {
 		sourcer = ps
 	} else {
-		m := fmt.Sprintf("failed to add plugin %q (with prefix %q), since it doesn't implement SourcerPlugin", p.Name(), prefix)
-		log.Error(m)
-		if s.panicOnInit {
-			panic(fmt.Sprintf("%s: %s", prefixedSourcerName, m))
-		}
-	}
-
-	if _, ok := s.sources[prefix]; ok && !s.acceptDuplicated {
-		m := fmt.Sprintf(
-			"duplicated prefix (%q) for plugin %q",
-			prefix,
-			p.Name(),
-		)
-		log.Error(m)
-		if s.panicOnInit {
-			panic(fmt.Sprintf("%s: %s", prefixedSourcerName, m))
-		}
+		log.Error(fmt.Sprintf(
+			"Failed to add plugin %q (with prefix %q), since it doesn't implement SourcerPlugin",
+			p.Name(), prefix,
+		))
 		return
 	}
 
-	log.Debug(fmt.Sprintf("Added sourcer plugin, with prefix %q", prefix))
-	s.sources[prefix] = sourcer
+	if _, ok := s.plugins[prefix]; ok && !s.acceptDuplicated {
+		log.Error("Duplicated prefix, skipping plugin")
+		return
+	}
+
+	s.plugins[prefix] = sourcer
 }
 
 func (s *prefixedSourcer) Source() (fs.FS, error) {
-	log := s.log
+	log := s.log.With()
 
-	fileSystems := make(map[string]fs.FS, len(s.sources))
+	fileSystems := make(map[string]fs.FS, len(s.plugins))
 
-	for a, ps := range s.sources {
+	for a, ps := range s.plugins {
 		log = log.With(slog.String("plugin", ps.Name()), slog.String("prefix", a))
 		log.Info("Sourcing file system of plugin")
 
 		f, err := ps.Source()
 		if err != nil && s.skipOnSourceError {
-			log.Error(
-				"Failed to source file system of plugin, skipping",
-				slog.String("error", err.Error()),
-			)
+			log.Warn("Failed to source file system of plugin, skipping",
+				slog.String("error", err.Error()))
 		} else if err != nil {
-			log.Error(
-				"Failed to source file system of plugin, returning error",
-				slog.String("error", err.Error()),
-			)
+			log.Error("Failed to source file system of plugin, returning error",
+				slog.String("error", err.Error()))
 			return f, err
 		}
 
