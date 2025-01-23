@@ -20,9 +20,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log/slog"
 
-	"forge.capytal.company/loreddev/x/blogo/fs"
 	"forge.capytal.company/loreddev/x/blogo/plugin"
 )
 

@@ -19,9 +19,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log/slog"
 
-	"forge.capytal.company/loreddev/x/blogo/fs"
+	"forge.capytal.company/loreddev/x/blogo/metadata"
 	"forge.capytal.company/loreddev/x/blogo/plugin"
 )
 
@@ -133,12 +134,14 @@ type multiSourcerFS struct {
 	skipOnError bool
 }
 
-func (pf *multiSourcerFS) Metadata() fs.Metadata {
-	var m fs.Metadata
+func (pf *multiSourcerFS) Metadata() metadata.Metadata {
+	ms := []metadata.Metadata{}
 	for _, v := range pf.fileSystems {
-		m = fs.JoinMetadata(m, v.Metadata())
+		if m, err := metadata.GetMetadata(v); err == nil {
+			ms = append(ms, m)
+		}
 	}
-	return m
+	return metadata.Join(ms...)
 }
 
 func (mf *multiSourcerFS) Open(name string) (fs.File, error) {

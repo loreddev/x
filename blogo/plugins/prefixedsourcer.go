@@ -18,10 +18,11 @@ package plugins
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"log/slog"
 	"strings"
 
-	"forge.capytal.company/loreddev/x/blogo/fs"
+	"forge.capytal.company/loreddev/x/blogo/metadata"
 	"forge.capytal.company/loreddev/x/blogo/plugin"
 )
 
@@ -163,12 +164,14 @@ type prefixedSourcerFS struct {
 	prefixSeparator string
 }
 
-func (pf *prefixedSourcerFS) Metadata() fs.Metadata {
-	var m fs.Metadata
+func (pf *prefixedSourcerFS) Metadata() metadata.Metadata {
+	ms := []metadata.Metadata{}
 	for _, v := range pf.fileSystems {
-		m = fs.JoinMetadata(m, v.Metadata())
+		if m, err := metadata.GetMetadata(v); err == nil {
+			ms = append(ms, m)
+		}
 	}
-	return m
+	return metadata.Join(ms...)
 }
 
 func (pf *prefixedSourcerFS) Open(name string) (fs.File, error) {

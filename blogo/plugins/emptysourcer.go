@@ -16,7 +16,9 @@
 package plugins
 
 import (
-	"forge.capytal.company/loreddev/x/blogo/fs"
+	"io/fs"
+
+	"forge.capytal.company/loreddev/x/blogo/metadata"
 	"forge.capytal.company/loreddev/x/blogo/plugin"
 )
 
@@ -38,8 +40,8 @@ func (p *emptySourcer) Source() (fs.FS, error) {
 
 type emptyFS struct{}
 
-func (f emptyFS) Metadata() fs.Metadata {
-	return fs.MetadataMap(map[string]any{})
+func (f emptyFS) Metadata() metadata.Metadata {
+	return metadata.Map(map[string]any{})
 }
 
 func (f emptyFS) Open(name string) (fs.File, error) {

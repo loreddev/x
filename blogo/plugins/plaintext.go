@@ -19,8 +19,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 
-	"forge.capytal.company/loreddev/x/blogo/fs"
 	"forge.capytal.company/loreddev/x/blogo/plugin"
 )
 
