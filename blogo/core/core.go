@@ -32,8 +32,8 @@ import (
 // Creates a implementation of [http.Handler] that maps the [(*http.Request).Path] to a file of the
 // same name in the file system provided by the sourcer. Use [Opts] to have more fine grained control
 // over some additional behaviour of the implementation.
-func NewServer(sourcer plugin.Sourcer, renderer plugin.Renderer, opts ...Opts) http.Handler {
-	opt := Opts{}
+func NewServer(sourcer plugin.Sourcer, renderer plugin.Renderer, opts ...ServerOpts) http.Handler {
+	opt := ServerOpts{}
 	if len(opts) > 0 {
 		opt = opts[0]
 	}
@@ -70,7 +70,7 @@ func NewServer(sourcer plugin.Sourcer, renderer plugin.Renderer, opts ...Opts) h
 
 // Options used in the construction of the server/[http.Handler] in [NewServer] to better
 // control additional behaviour of the implementation.
-type Opts struct {
+type ServerOpts struct {
 	// Call [(plugin.Sourcer).Source] on construction of the implementation on [NewServer]?
 	// Panics if the it returns a error. By default sourcing of files is done on the first
 	// request.
