@@ -16,243 +16,233 @@
 package blogo
 
 import (
-	"errors"
-	"fmt"
 	"io"
-	"io/fs"
 	"log/slog"
 	"net/http"
-	"strings"
+
+	"forge.capytal.company/loreddev/x/blogo/core"
+	"forge.capytal.company/loreddev/x/blogo/plugin"
+	"forge.capytal.company/loreddev/x/blogo/plugins"
+	"forge.capytal.company/loreddev/x/tinyssert"
 )
 
-type Blogo interface {
-	Use(Plugin)
-	Init() error
-	http.Handler
-}
-
-// TODO: use binary operation so multiple levels can be used together
-// type PanicLevel int
-//
-// const (
-// 	PanicOnInit
-// )
-
-type Options struct {
-	Logger *slog.Logger
-	// ErrorResponse TODO: structured error template or plugin
-}
-
-type blogo struct {
-	files FS
-
-	sources   []SourcerPlugin
-	renderers []RendererPlugin
-
-	log   *slog.Logger
-	panic bool
-}
-
-func New(opts ...Options) Blogo {
-	opt := Options{}
+func New(opts ...Opts) Blogo {
+	opt := Opts{}
 	if len(opts) > 0 {
 		opt = opts[0]
 	}
 
+	if opt.Assertions == nil {
+		opt.Assertions = tinyssert.NewDisabledAssertions()
+	}
 	if opt.Logger == nil {
 		opt.Logger = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
-	} else {
-		opt.Logger = opt.Logger.WithGroup("blogo")
+	}
+
+	if opt.FallbackRenderer == nil {
+		opt.FallbackRenderer = plugins.NewPlainText()
+	}
+	if opt.MultiRenderer == nil {
+		opt.MultiRenderer = plugins.NewMultiRenderer()
+	}
+	if opt.FallbackSourcer == nil {
+		opt.FallbackSourcer = plugins.NewEmptySourcer()
+	}
+	if opt.MultiSourcer == nil {
+		opt.MultiSourcer = plugins.NewMultiSourcer()
 	}
 
 	return &blogo{
-		files:   nil,
-		sources: []SourcerPlugin{},
-		log:     opt.Logger,
-		panic:   true, // TODO
+		plugins: []plugin.Plugin{},
+
+		fallbackRenderer: opt.FallbackRenderer,
+		multiRenderer:    opt.MultiRenderer,
+		fallbackSourcer:  opt.FallbackSourcer,
+		multiSourcer:     opt.MultiSourcer,
+
+		assert: opt.Assertions,
+		log:    opt.Logger,
 	}
 }
 
-func (b *blogo) Use(p Plugin) {
+type Blogo interface {
+	Use(plugin.Plugin)
+	Init()
+	http.Handler
+}
+
+type Opts struct {
+	FallbackRenderer plugin.Renderer
+	MultiRenderer    interface {
+		plugin.Renderer
+		plugin.WithPlugins
+	}
+	FallbackSourcer plugin.Sourcer
+	MultiSourcer    interface {
+		plugin.Sourcer
+		plugin.WithPlugins
+	}
+
+	Assertions tinyssert.Assertions
+	Logger     *slog.Logger
+}
+
+type blogo struct {
+	plugins []plugin.Plugin
+
+	fallbackRenderer plugin.Renderer
+	multiRenderer    interface {
+		plugin.Renderer
+		plugin.WithPlugins
+	}
+	fallbackSourcer plugin.Sourcer
+	multiSourcer    interface {
+		plugin.Sourcer
+		plugin.WithPlugins
+	}
+
+	server http.Handler
+
+	assert tinyssert.Assertions
+	log    *slog.Logger
+}
+
+func (b *blogo) Use(p plugin.Plugin) {
+	b.assert.NotNil(p, "Plugin definition should not be nil")
+	b.assert.NotNil(b.plugins, "Plugins needs to be not-nil")
+	b.assert.NotNil(b.log)
+
 	log := b.log.With(slog.String("plugin", p.Name()))
 
-	if p, ok := p.(PluginGroup); ok {
-		log.Debug("Added plugin", slog.String("type", "PluginList"))
+	if p, ok := p.(plugin.Group); ok {
+		log.Debug("Plugin group found, adding it's plugins")
 		for _, p := range p.Plugins() {
 			b.Use(p)
 		}
 	}
 
-	if p, ok := p.(SourcerPlugin); ok {
-		log.Debug("Added plugin", slog.String("type", "SourcerPlugin"))
-		b.sources = append(b.sources, p)
-	}
-	if p, ok := p.(RendererPlugin); ok {
-		log.Debug("Added plugin", slog.String("type", "RenderPlugin"))
-		b.renderers = append(b.renderers, p)
-	}
+	b.plugins = append(b.plugins, p)
 }
 
 func (b *blogo) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log := b.log.With(slog.String("step", "SERVE"), slog.String("path", r.URL.Path))
+	b.assert.NotNil(b.log)
+	b.assert.NotNil(w)
+	b.assert.NotNil(r)
 
-	log.Debug("Serving endpoint")
+	if b.server != nil {
+		b.ServeHTTP(w, r)
+	}
 
-	if b.files == nil {
-		log.Debug("No files in Blogo engine, initializing files")
+	log := b.log.With()
+	log.Debug("Core server not initialized")
 
-		err := b.Init()
-		if err != nil {
-			log.Error("Failed to initialize files")
+	b.Init()
 
-			err = errors.Join(errors.New("failed to initialize Blogo engine on first request"), err)
-			if b.panic {
-				panic(err.Error())
-			} else {
-				w.WriteHeader(http.StatusInternalServerError)
-				_, _ = w.Write([]byte(err.Error()))
-			}
-			return
+	b.server.ServeHTTP(w, r)
+}
+
+func (b *blogo) Init() {
+	b.assert.NotNil(b.plugins, "Plugins needs to be not-nil")
+	b.assert.NotNil(b.log)
+
+	log := b.log.With()
+	log.Debug("Initializing Blogo plugins")
+
+	sourcer := b.initSourcer()
+	renderer := b.initRenderer()
+
+	log.Debug("Constructing Blogo server")
+
+	b.server = core.NewServer(sourcer, renderer, core.ServerOpts{
+		Assertions: b.assert,
+		Logger:     b.log.WithGroup("server"),
+	})
+
+	log.Debug("Server constructed")
+}
+
+func (b *blogo) initRenderer() plugin.Renderer {
+	b.assert.NotNil(b.plugins, "Plugins needs to be not-nil")
+	b.assert.NotNil(b.fallbackRenderer, "FallbackRenderer needs to be not-nil")
+	b.assert.NotNil(b.multiRenderer, "MultiRenderer needs to be not-nil")
+	b.assert.NotNil(b.log)
+
+	log := b.log.With()
+	log.Debug("Initializing Blogo Renderer plugins")
+
+	renderers := []plugin.Renderer{}
+
+	for _, p := range b.plugins {
+		if r, ok := p.(plugin.Renderer); ok {
+			log.Debug("Adding Renderer", slog.String("sourcer", r.Name()))
+
+			renderers = append(renderers, r)
 		}
 	}
 
-	path := strings.Trim(r.URL.Path, "/")
-	if path == "" || path == "/" {
-		path = "."
+	if len(renderers) == 0 {
+		log.Debug("No Renderer avaiable, using %q as fallback",
+			slog.String("renderer", b.fallbackRenderer.Name()))
+
+		return b.fallbackRenderer
 	}
 
-	f, err := b.files.Open(path)
+	if len(renderers) == 1 {
+		log.Debug("Just one Renderer found, using it directly",
+			slog.String("renderer", renderers[0].Name()))
 
-	if errors.Is(err, fs.ErrNotExist) {
-		log.Error("Failed to read file", slog.String("error", err.Error()))
-
-		w.WriteHeader(http.StatusNotFound)
-		_, _ = w.Write([]byte(err.Error()))
-		return
-	} else if err != nil {
-		log.Error("Failed to read file", slog.String("error", err.Error()))
-
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(err.Error()))
-		return
-	}
-	defer f.Close()
-
-	log.Debug("Writing response file")
-
-	log.Debug("Rendering file")
-
-	err = b.render(f, w)
-	if err != nil {
-		log.Error("Failed to render file", slog.String("error", err.Error()))
-
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(err.Error()))
-		return
+		return renderers[0]
 	}
 
-	log.Debug("Finished responding file")
-}
-
-func (b *blogo) Init() error {
-	log := b.log.With(slog.String("step", "INITIALIZATION"))
-	log.Debug("Initializing blogo")
-
-	if len(b.sources) == 0 {
-		sourcer := NewEmptySourcer()
-		log.Debug(fmt.Sprintf("No SourcerPlugin found, using %q as fallback", sourcer.Name()))
-		b.Use(sourcer)
-	}
-
-	if len(b.renderers) == 0 {
-		renderer := NewPlainText()
-		log.Debug(
-			fmt.Sprintf(
-				"No RendererPlugin plugin found, adding %q as fallback renderer",
-				renderer.Name(),
-			),
-		)
-		b.Use(renderer)
-	}
-
-	fs, err := b.source()
-	if err != nil {
-		return errors.Join(errors.New("failed to source files"), err)
-	}
-	b.files = fs
-
-	return nil
-}
-
-func (b *blogo) source() (FS, error) {
-	log := b.log.With(slog.String("step", "SOURCING"))
-
-	if len(b.sources) == 1 {
-		log.Debug(
-			"Just one sources found, using it directly",
-			slog.String("plugin", b.sources[0].Name()),
-		)
-		return b.sources[0].Source()
-	}
-
-	log.Debug(
-		fmt.Sprintf(
-			"Multiple sources found, initializing built-in %q plugin",
-			multiSourcerPluginName,
-		),
+	log.Debug("Multiple Renderers found, using MultiRenderer to combine them",
+		slog.String("renderer", b.multiRenderer.Name()),
 	)
-
-	multi := NewMultiSourcer(MultiSourcerOpts{
-		NotPanicOnInit:       true,
-		NotSkipOnFSError:     false,
-		NotSkipOnSourceError: false,
-		Logger:               log,
-	})
-
-	for _, s := range b.sources {
-		log.Debug("Adding plugin to multi-sourcer", slog.String("plugin", s.Name()))
-		multi.Use(s)
+	for _, r := range renderers {
+		b.multiRenderer.Use(r)
 	}
 
-	b.sources = make([]SourcerPlugin, 1)
-	b.sources[0] = multi
-
-	return b.sources[0].Source()
+	return b.multiRenderer
 }
 
-func (b *blogo) render(src File, w io.Writer) error {
-	log := b.log.With(slog.String("step", "RENDERING"))
+func (b *blogo) initSourcer() plugin.Sourcer {
+	b.assert.NotNil(b.plugins, "Plugins needs to be not-nil")
+	b.assert.NotNil(b.fallbackSourcer, "FallbackSourcer needs to be not-nil")
+	b.assert.NotNil(b.multiSourcer, "MultiSourcer needs to be not-nil")
+	b.assert.NotNil(b.log)
 
-	if len(b.renderers) == 1 {
-		log.Debug(
-			"Just one renderer found, using it directly",
-			slog.String("plugin", b.renderers[0].Name()),
-		)
-		return b.renderers[0].Render(src, w)
+	log := b.log.With()
+	log.Debug("Initializing Blogo Sourcer plugins")
+
+	sourcers := []plugin.Sourcer{}
+
+	for _, p := range b.plugins {
+		if s, ok := p.(plugin.Sourcer); ok {
+			log.Debug("Adding Sourcer", slog.String("sourcer", s.Name()))
+
+			sourcers = append(sourcers, s)
+		}
 	}
 
-	log.Debug(
-		fmt.Sprintf(
-			"Multiple renderers found, initializing built-in %q plugin",
-			multiRendererPluginName,
-		),
+	if len(sourcers) == 0 {
+		log.Debug("No Sourcer avaiable, using %q as fallback",
+			slog.String("sourcer", b.fallbackSourcer.Name()))
+
+		return b.fallbackSourcer
+	}
+
+	if len(sourcers) == 1 {
+		log.Debug("Just one Sourcer found, using it directly",
+			slog.String("sourcer", sourcers[0].Name()))
+
+		return sourcers[0]
+	}
+
+	log.Debug("Multiple Sourcers found, using MultiSourcer to combine them",
+		slog.String("sourcer", b.multiSourcer.Name()),
 	)
-
-	multi := NewMultiRenderer(MultiRendererOpts{
-		NotSkipOnError: false,
-		NotPanicOnInit: true,
-		Logger:         log,
-	})
-
-	for _, r := range b.renderers {
-		log.Debug("Adding plugin to multi-renderer", slog.String("plugin", r.Name()))
-		multi.Use(r)
+	for _, s := range sourcers {
+		b.multiSourcer.Use(s)
 	}
 
-	log.Debug("Overriding renderers slice")
-
-	b.renderers = make([]RendererPlugin, 1)
-	b.renderers[0] = multi
-
-	return b.renderers[0].Render(src, w)
+	return b.multiSourcer
 }

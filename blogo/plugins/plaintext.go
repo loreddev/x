@@ -28,7 +28,7 @@ const plainTextName = "blogo-plaintext-renderer"
 
 type painText struct{}
 
-func NewPlainText() plugin.Plugin {
+func NewPlainText() plugin.Renderer {
 	return &painText{}
 }
 

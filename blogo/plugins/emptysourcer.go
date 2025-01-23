@@ -26,7 +26,7 @@ const emptySourcerPluginName = "blogo-empty-sourcer"
 
 type emptySourcer struct{}
 
-func NewEmptySourcer() plugin.Plugin {
+func NewEmptySourcer() plugin.Sourcer {
 	return &emptySourcer{}
 }
 
