@@ -22,43 +22,48 @@ import (
 	"io/fs"
 
 	"forge.capytal.company/loreddev/x/blogo/plugin"
+	"forge.capytal.company/loreddev/x/tinyssert"
 )
 
 const plainTextName = "blogo-plaintext-renderer"
 
-type painText struct{}
+func NewPlainText(opts ...PlainTextOpts) plugin.Renderer {
+	opt := PlainTextOpts{}
+	if len(opts) > 0 {
+		opt = opts[0]
+	}
 
-func NewPlainText() plugin.Renderer {
-	return &painText{}
+	if opt.Assertions == nil {
+		opt.Assertions = tinyssert.NewDisabledAssertions()
+	}
+
+	return &painText{
+		assert: opt.Assertions,
+	}
+}
+
+type PlainTextOpts struct {
+	Assertions tinyssert.Assertions
+}
+
+type painText struct {
+	assert tinyssert.Assertions
 }
 
 func (p *painText) Name() string {
 	return plainTextName
 }
 
-func (p *painText) Render(f fs.File, w io.Writer) error {
-	if d, ok := f.(fs.ReadDirFile); ok {
+func (p *painText) Render(src fs.File, w io.Writer) error {
+	p.assert.NotNil(src)
+	p.assert.NotNil(w)
+
+	if d, ok := src.(fs.ReadDirFile); ok {
 		return p.renderDirectory(d, w)
 	}
 
-	buf := make([]byte, 1024)
-	for {
-		n, err := f.Read(buf)
-		if err != nil && err != io.EOF {
-			return err
-		}
-
-		if n == 0 {
-			break
-		}
-
-		_, err = w.Write(buf[:n])
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	_, err := io.Copy(w, src)
+	return err
 }
 
 func (p *painText) renderDirectory(f fs.ReadDirFile, w io.Writer) error {
