@@ -17,8 +17,7 @@ package plugin
 
 import (
 	"io"
-
-	"forge.capytal.company/loreddev/x/blogo/fs"
+	"io/fs"
 )
 
 type Plugin interface {
