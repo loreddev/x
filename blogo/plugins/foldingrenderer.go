@@ -27,25 +27,6 @@ import (
 
 const foldingRendererPluginName = "blogo-foldingrenderer-renderer"
 
-type foldingRenderer struct {
-	plugins []plugin.Renderer
-
-	panicOnInit bool
-
-	log *slog.Logger
-}
-
-type FoldingRendererOpts struct {
-	PanicOnInit bool
-
-	Logger *slog.Logger
-}
-
-type FoldingRenderer interface {
-	plugin.WithPlugins
-	plugin.Renderer
-}
-
 func NewFoldingRenderer(opts ...FoldingRendererOpts) FoldingRenderer {
 	opt := FoldingRendererOpts{}
 	if len(opts) > 0 {
@@ -62,6 +43,23 @@ func NewFoldingRenderer(opts ...FoldingRendererOpts) FoldingRenderer {
 
 		log: opt.Logger,
 	}
+}
+
+type FoldingRenderer interface {
+	plugin.WithPlugins
+	plugin.Renderer
+}
+
+type FoldingRendererOpts struct {
+	PanicOnInit bool
+
+	Logger     *slog.Logger
+}
+
+type foldingRenderer struct {
+	plugins []plugin.Renderer
+
+	log    *slog.Logger
 }
 
 func (r *foldingRenderer) Name() string {
