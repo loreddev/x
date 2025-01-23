@@ -30,26 +30,6 @@ var ErrRendererNotSupportedFile = errors.New("this file is not supported by rend
 
 const multiRendererName = "blogo-multirenderer-renderer"
 
-type MultiRenderer interface {
-	plugin.Renderer
-	plugin.WithPlugins
-}
-
-type multiRenderer struct {
-	renderers []plugin.Renderer
-
-	skipOnError bool
-	panicOnInit bool
-
-	log *slog.Logger
-}
-
-type MultiRendererOpts struct {
-	NotSkipOnError bool
-	NotPanicOnInit bool
-	Logger         *slog.Logger
-}
-
 func NewMultiRenderer(opts ...MultiRendererOpts) MultiRenderer {
 	opt := MultiRendererOpts{}
 	if len(opts) > 0 {
@@ -71,6 +51,21 @@ func NewMultiRenderer(opts ...MultiRendererOpts) MultiRenderer {
 	}
 }
 
+type MultiRenderer interface {
+	plugin.Renderer
+	plugin.WithPlugins
+}
+
+type MultiRendererOpts struct {
+	Logger     *slog.Logger
+}
+
+type multiRenderer struct {
+	plugins []plugin.Renderer
+
+	log    *slog.Logger
+}
+
 func (r *multiRenderer) Name() string {
 	return multiRendererName
 }
@@ -80,7 +75,7 @@ func (r *multiRenderer) Use(p plugin.Plugin) {
 
 	if pr, ok := p.(plugin.Renderer); ok {
 		log.Debug("Added renderer plugin")
-		r.renderers = append(r.renderers, pr)
+		r.plugins = append(r.plugins, pr)
 	} else {
 		m := fmt.Sprintf("failed to add plugin %q, since it doesn't implement plugin.Renderer", p.Name())
 		log.Error(m)
@@ -92,8 +87,9 @@ func (r *multiRenderer) Use(p plugin.Plugin) {
 
 func (r *multiRenderer) Render(src fs.File, w io.Writer) error {
 	mf := newMultiRendererFile(src)
-	for _, pr := range r.renderers {
-		log := r.log.With(slog.String("plugin", pr.Name()))
+
+	for _, pr := range r.plugins {
+		log := log.With(slog.String("plugin", pr.Name()))
 
 		log.Debug("Trying to render with plugin")
 		err := pr.Render(src, w)
