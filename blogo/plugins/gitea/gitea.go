@@ -17,16 +17,17 @@ package gitea
 
 import (
 	"fmt"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"strings"
 
-	"forge.capytal.company/loreddev/x/blogo"
+	"forge.capytal.company/loreddev/x/blogo/plugin"
 )
 
 const pluginName = "blogo-gitea-sourcer"
 
-type plugin struct {
+type p struct {
 	client *client
 
 	owner string
@@ -39,7 +40,7 @@ type Opts struct {
 	Ref        string
 }
 
-func New(owner, repo, apiUrl string, opts ...Opts) blogo.Plugin {
+func New(owner, repo, apiUrl string, opts ...Opts) plugin.Plugin {
 	opt := Opts{}
 	if len(opts) > 0 {
 		opt = opts[0]
@@ -69,7 +70,7 @@ func New(owner, repo, apiUrl string, opts ...Opts) blogo.Plugin {
 
 	client := newClient(u.String(), opt.HTTPClient)
 
-	return &plugin{
+	return &p{
 		client: client,
 
 		owner: owner,
@@ -78,10 +79,10 @@ func New(owner, repo, apiUrl string, opts ...Opts) blogo.Plugin {
 	}
 }
 
-func (p *plugin) Name() string {
+func (p *p) Name() string {
 	return pluginName
 }
 
-func (p *plugin) Source() (blogo.FS, error) {
+func (p *p) Source() (fs.FS, error) {
 	return newRepositoryFS(p.owner, p.repo, p.ref, p.client), nil
 }

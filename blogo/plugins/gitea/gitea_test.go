@@ -4,14 +4,14 @@ import (
 	"io"
 	"testing"
 
-	"forge.capytal.company/loreddev/x/blogo"
-	"forge.capytal.company/loreddev/x/blogo/gitea"
+	"forge.capytal.company/loreddev/x/blogo/plugin"
+	"forge.capytal.company/loreddev/x/blogo/plugins/gitea"
 )
 
 func TestSource(t *testing.T) {
-	plugin := gitea.New("loreddev", "x", "https://forge.capytal.company")
+	p := gitea.New("loreddev", "x", "https://forge.capytal.company")
 
-	s := plugin.(blogo.SourcerPlugin)
+	s := p.(plugin.Sourcer)
 
 	fs, err := s.Source()
 	if err != nil {
