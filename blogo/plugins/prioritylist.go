@@ -24,16 +24,16 @@ import (
 
 const priorityGroupName = "blogo-prioritygroup-group"
 
-type priorityGroup struct {
-	plugins []plugin.Plugin
+func NewPriorityGroup(plugins ...plugin.Plugin) PriorityGroup {
+	return &priorityGroup{plugins}
 }
 
 type PriorityGroup interface {
 	plugin.WithPlugins
 }
 
-func NewPriorityGroup(plugins ...plugin.Plugin) PriorityGroup {
-	return &priorityGroup{plugins}
+type priorityGroup struct {
+	plugins []plugin.Plugin
 }
 
 func (p *priorityGroup) Name() string {
