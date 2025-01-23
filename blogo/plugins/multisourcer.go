@@ -28,29 +28,6 @@ import (
 
 const multiSourcerName = "blogo-multisourcer-sourcer"
 
-type MultiSourcer interface {
-	plugin.Sourcer
-	plugin.WithPlugins
-}
-
-type multiSourcer struct {
-	sources []plugin.Sourcer
-
-	panicOnInit       bool
-	skipOnSourceError bool
-	skipOnFSError     bool
-
-	log *slog.Logger
-}
-
-type MultiSourcerOpts struct {
-	NotPanicOnInit       bool
-	NotSkipOnSourceError bool
-	NotSkipOnFSError     bool
-
-	Logger *slog.Logger
-}
-
 func NewMultiSourcer(opts ...MultiSourcerOpts) MultiSourcer {
 	opt := MultiSourcerOpts{}
 	if len(opts) > 0 {
@@ -63,14 +40,36 @@ func NewMultiSourcer(opts ...MultiSourcerOpts) MultiSourcer {
 	opt.Logger = opt.Logger.WithGroup(multiSourcerName)
 
 	return &multiSourcer{
-		sources: []plugin.Sourcer{},
+		plugins: []plugin.Sourcer{},
 
-		panicOnInit:       !opt.NotPanicOnInit,
-		skipOnSourceError: !opt.NotSkipOnSourceError,
-		skipOnFSError:     !opt.NotSkipOnFSError,
+		skipOnSourceError: opt.SkipOnSourceError,
+		skipOnFSError:     opt.SkipOnFSError,
 
 		log: opt.Logger,
 	}
+}
+
+type MultiSourcer interface {
+	plugin.Sourcer
+	plugin.WithPlugins
+}
+
+type MultiSourcerOpts struct {
+	SkipOnSourceError bool
+	SkipOnFSError     bool
+
+	Assertions tinyssert.Assertions
+	Logger     *slog.Logger
+}
+
+type multiSourcer struct {
+	plugins []plugin.Sourcer
+
+	skipOnSourceError bool
+	skipOnFSError     bool
+
+	assert tinyssert.Assertions
+	log    *slog.Logger
 }
 
 func (s *multiSourcer) Name() string {
@@ -82,28 +81,27 @@ func (s *multiSourcer) Use(p plugin.Plugin) {
 
 	if plg, ok := p.(plugin.Sourcer); ok {
 		log.Debug("Added sourcer plugin")
-		s.sources = append(s.sources, plg)
+		s.plugins = append(s.plugins, plg)
 	} else {
-		m := fmt.Sprintf("failed to add plugin %q, since it doesn't implement plugin.Sourcer", p.Name())
-		log.Error(m)
-		if s.panicOnInit {
-			panic(fmt.Sprintf("%s: %s", p.Name(), m))
-		}
+		log.Error(fmt.Sprintf(
+			"Failed to add plugin %q, since it doesn't implement plugin.Sourcer",
+			p.Name(),
+		))
 	}
 }
 
 func (s *multiSourcer) Source() (fs.FS, error) {
-	log := s.log
+	log := s.log.With()
 
 	fileSystems := []fs.FS{}
 
-	for _, ps := range s.sources {
+	for _, ps := range s.plugins {
 		log = log.With(slog.String("plugin", ps.Name()))
 		log.Info("Sourcing file system of plugin")
 
 		f, err := ps.Source()
 		if err != nil && s.skipOnSourceError {
-			log.Error(
+			log.Warn(
 				"Failed to source file system of plugin, skipping",
 				slog.String("error", err.Error()),
 			)
