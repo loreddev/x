@@ -27,8 +27,6 @@ import (
 	"forge.capytal.company/loreddev/x/tinyssert"
 )
 
-var ErrRendererNotSupportedFile = errors.New("this file is not supported by renderer")
-
 const multiRendererName = "blogo-multirenderer-renderer"
 
 func NewMultiRenderer(opts ...MultiRendererOpts) MultiRenderer {
@@ -45,7 +43,6 @@ func NewMultiRenderer(opts ...MultiRendererOpts) MultiRenderer {
 	}
 
 	return &multiRenderer{
-		skipOnError: !opt.NotSkipOnError,
 		panicOnInit: !opt.NotPanicOnInit,
 		plugins: []plugin.Renderer{},
 
@@ -116,11 +113,6 @@ func (r *multiRenderer) Render(src fs.File, w io.Writer) error {
 
 		if err == nil {
 			break
-		}
-
-		if !r.skipOnError && !errors.Is(err, ErrRendererNotSupportedFile) {
-			log.Error("Failed to render using plugin", slog.String("error", err.Error()))
-			return errors.Join(fmt.Errorf("failed to render using plugin %q", pr.Name()), err)
 		}
 
 		log.Debug("Unable to render using plugin", slog.String("error", err.Error()))
