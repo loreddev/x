@@ -23,6 +23,7 @@ import (
 	"log/slog"
 
 	"forge.capytal.company/loreddev/x/blogo/plugin"
+	"forge.capytal.company/loreddev/x/tinyssert"
 )
 
 const foldingRendererPluginName = "blogo-foldingrenderer-renderer"
@@ -33,15 +34,18 @@ func NewFoldingRenderer(opts ...FoldingRendererOpts) FoldingRenderer {
 		opt = opts[0]
 	}
 
+	if opt.Assertions == nil {
+		opt.Assertions = tinyssert.NewDisabledAssertions()
+	}
 	if opt.Logger == nil {
 		opt.Logger = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
 	}
-	opt.Logger = opt.Logger.WithGroup(foldingRendererPluginName)
 
 	return &foldingRenderer{
 		plugins: []plugin.Renderer{},
 
-		log: opt.Logger,
+		assert: opt.Assertions,
+		log:    opt.Logger,
 	}
 }
 
@@ -53,12 +57,14 @@ type FoldingRenderer interface {
 type FoldingRendererOpts struct {
 	PanicOnInit bool
 
+	Assertions tinyssert.Assertions
 	Logger     *slog.Logger
 }
 
 type foldingRenderer struct {
 	plugins []plugin.Renderer
 
+	assert tinyssert.Assertions
 	log    *slog.Logger
 }
 
@@ -67,40 +73,66 @@ func (r *foldingRenderer) Name() string {
 }
 
 func (r *foldingRenderer) Use(p plugin.Plugin) {
+	r.assert.NotNil(p)
+	r.assert.NotNil(r.plugins)
+	r.assert.NotNil(r.log)
+
 	log := r.log.With(slog.String("plugin", p.Name()))
 
 	if pr, ok := p.(plugin.Renderer); ok {
 		r.plugins = append(r.plugins, pr)
 	} else {
-		m := fmt.Sprintf("failed to add plugin %q, since it doesn't implement plugin.Renderer", p.Name())
-		log.Error(m)
-		if r.panicOnInit {
-			panic(fmt.Sprintf("%s: %s", foldingRendererPluginName, m))
-		}
+		log.Error(fmt.Sprintf(
+			"Failed to add plugin %q, since it doesn't implement plugin.Renderer",
+			p.Name(),
+		))
 	}
 }
 
 func (r *foldingRenderer) Render(src fs.File, w io.Writer) error {
+	r.assert.NotNil(r.plugins)
+	r.assert.NotNil(r.log)
+	r.assert.NotNil(src)
+	r.assert.NotNil(w)
+
+	log := r.log.With()
+
 	if len(r.plugins) == 0 {
+		log.Debug("No renderers found, copying file contents to writer")
+
 		_, err := io.Copy(w, src)
 		return err
 	}
 
+	log.Debug("Creating folding file")
+
 	f, err := newFoldignFile(src)
 	if err != nil {
+		log.Error("Failed to create folding file", slog.String("err", err.Error()))
+
 		return err
 	}
 
 	for _, p := range r.plugins {
+		log := log.With(slog.String("plugin", p.Name()))
+
+		log.Debug("Rendering with plugin")
+
 		err := p.Render(f, f)
 		if err != nil {
+			log.Error("Failed to render with plugin", slog.String("err", err.Error()))
 			return err
 		}
 
+		log.Debug("Folding file to next render")
+
 		if err := f.Fold(); err != nil {
+			log.Error("Failed to fold file", slog.String("err", err.Error()))
 			return err
 		}
 	}
+
+	log.Debug("Writing final file to Writer")
 
 	_, err = io.Copy(w, f)
 	return err
