@@ -97,6 +97,13 @@ func (r *multiRenderer) Render(src fs.File, w io.Writer) error {
 
 	log := r.log.With()
 
+	if len(r.plugins) == 0 {
+		log.Debug("No renderers found, copying file contents to writer")
+
+		_, err := io.Copy(w, src)
+		return err
+	}
+
 	mf := newMultiRendererFile(src)
 
 	for _, pr := range r.plugins {
