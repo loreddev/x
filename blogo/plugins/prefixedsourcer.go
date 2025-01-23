@@ -24,6 +24,7 @@ import (
 
 	"forge.capytal.company/loreddev/x/blogo/metadata"
 	"forge.capytal.company/loreddev/x/blogo/plugin"
+	"forge.capytal.company/loreddev/x/tinyssert"
 )
 
 const prefixedSourcerName = "blogo-prefixedsourcer-sourcer"
@@ -38,6 +39,9 @@ func NewPrefixedSourcer(opts ...PrefixedSourcerOpts) PrefixedSourcer {
 		opt.PrefixSeparator = "/"
 	}
 
+	if opt.Assertions == nil {
+		opt.Assertions = tinyssert.NewDisabledAssertions()
+	}
 	if opt.Logger == nil {
 		opt.Logger = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
 	}
@@ -51,7 +55,8 @@ func NewPrefixedSourcer(opts ...PrefixedSourcerOpts) PrefixedSourcer {
 		skipOnSourceError: opt.SkipOnSourceError,
 		skipOnFSError:     opt.SkipOnFSError,
 
-		log: opt.Logger,
+		assert: opt.Assertions,
+		log:    opt.Logger,
 	}
 }
 
@@ -62,8 +67,10 @@ type PrefixedSourcerOpts struct {
 	SkipOnSourceError bool
 	SkipOnFSError     bool
 
+	Assertions tinyssert.Assertions
 	Logger     *slog.Logger
 }
+
 type PrefixedSourcer interface {
 	plugin.Sourcer
 	plugin.WithPlugins
@@ -79,6 +86,7 @@ type prefixedSourcer struct {
 	skipOnSourceError bool
 	skipOnFSError     bool
 
+	assert tinyssert.Assertions
 	log    *slog.Logger
 }
 
@@ -91,6 +99,11 @@ func (s *prefixedSourcer) Use(plugin plugin.Plugin) {
 }
 
 func (s *prefixedSourcer) UseNamed(prefix string, p plugin.Plugin) {
+	s.assert.NotZero(prefix, "Prefix of plugin should not be empty")
+	s.assert.NotNil(p)
+	s.assert.NotNil(s.plugins)
+	s.assert.NotNil(s.log)
+
 	log := s.log.With(slog.String("plugin", p.Name()), slog.String("prefix", prefix))
 	log.Debug("Adding plugin")
 
@@ -114,6 +127,9 @@ func (s *prefixedSourcer) UseNamed(prefix string, p plugin.Plugin) {
 }
 
 func (s *prefixedSourcer) Source() (fs.FS, error) {
+	s.assert.NotNil(s.plugins)
+	s.assert.NotNil(s.log)
+
 	log := s.log.With()
 
 	fileSystems := make(map[string]fs.FS, len(s.plugins))
