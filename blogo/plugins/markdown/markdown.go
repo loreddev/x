@@ -1,7 +1,9 @@
 package markdown
 
 import (
+	"errors"
 	"io"
+	"io/fs"
 	"strings"
 
 	"github.com/yuin/goldmark"
@@ -11,17 +13,17 @@ import (
 	"github.com/yuin/goldmark/renderer"
 	"github.com/yuin/goldmark/text"
 
-	"forge.capytal.company/loreddev/x/blogo"
+	"forge.capytal.company/loreddev/x/blogo/plugin"
 )
 
 const pluginName = "blogo-markdown-renderer"
 
-type plugin struct {
+type p struct {
 	parser   parser.Parser
 	renderer renderer.Renderer
 }
 
-func New() blogo.Plugin {
+func New() plugin.Plugin {
 	m := goldmark.New(
 		goldmark.WithExtensions(
 			extension.NewLinkify(),
@@ -29,20 +31,20 @@ func New() blogo.Plugin {
 		),
 	)
 
-	return &plugin{
+	return &p{
 		parser:   m.Parser(),
 		renderer: m.Renderer(),
 	}
 }
 
-func (p *plugin) Name() string {
+func (p *p) Name() string {
 	return pluginName
 }
 
-func (p *plugin) Render(f blogo.File, w io.Writer) error {
+func (p *p) Render(f fs.File, w io.Writer) error {
 	stat, err := f.Stat()
 	if err != nil || !strings.HasSuffix(stat.Name(), ".md") {
-		return blogo.ErrRendererNotSupportedFile
+		return errors.New("does not support file")
 	}
 
 	src, err := io.ReadAll(f)
