@@ -28,7 +28,7 @@ var (
 	ErrNoMetadata  = errors.New("type does not implement or has metadata")
 )
 
-func GetType[T any](m T, key string) (T, error) {
+func GetTyped[T any](m any, key string) (T, error) {
 	var z T
 
 	v, err := Get(m, key)
