@@ -17,7 +17,6 @@ package metadata
 
 import (
 	"errors"
-	"io/fs"
 	"reflect"
 )
 
@@ -81,9 +80,7 @@ func GetMetadata(m any) (Metadata, error) {
 
 	if mt, ok := m.(Metadata); ok {
 		data = mt
-	} else if mfs, ok := m.(MetadataFS); ok {
-		data = mfs.Metadata()
-	} else if mfile, ok := m.(MetadataFile); ok {
+	} else if mfile, ok := m.(WithMetadata); ok {
 		data = mfile.Metadata()
 	} else {
 		return nil, ErrNoMetadata
@@ -92,13 +89,7 @@ func GetMetadata(m any) (Metadata, error) {
 	return data, nil
 }
 
-type MetadataFS interface {
-	fs.FS
-	Metadata() Metadata
-}
-
-type MetadataFile interface {
-	fs.File
+type WithMetadata interface {
 	Metadata() Metadata
 }
 
