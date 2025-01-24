@@ -104,8 +104,6 @@ type server struct {
 }
 
 func (srv *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	srv.assert.NotNil(srv.sourcer, "A sourcer needs to be available to serve files")
-	srv.assert.NotNil(srv.renderer, "A renderer needs to be available to serve files")
 	srv.assert.NotNil(srv.log)
 	srv.assert.NotNil(w)
 	srv.assert.NotNil(r)
