@@ -181,13 +181,50 @@ func GetMetadata(m any) (Metadata, error) {
 	return data, nil
 }
 
+// Types may implement this interface to add [Metadata] to their objects that can
+// be easily accessed via [Get], [Set], [Delete] and [GetMetadata]
 type WithMetadata interface {
+	// Returns the underlying [Metadata] of the type.
+	//
+	// If the [Metadata] is empty and/or the type doesn't have any data associated with
+	// it, implementations should return a empty [Metadata] (such as Map(map[string]any{}))
+	// and should never return a nil interface.
 	Metadata() Metadata
 }
 
+// Minimal interface for the Metadata data. This data is used to easily pass information
+// between [plugin.Plugin]'s files and file systems.
+//
+// Implementations of this interface can store their metadata in any way possible,
+// may it be with a simple underlying map[string]any or a network accessed storage.
+//
+// Plugins may add prefixed to their keys to minimize conflicts between other plugins'
+// data. The convention for key strings is "<prefix>.<key-name>", all lowercase and
+// kabeb-cased.
+//
+// Other objects and interfaces, such as [fs.FS] and [fs.File] may implement this
+// interface directly or use the [WithMetadata] interface.
+//
+// [TypedMetadata] may also be implemented to optimize calls via [GetTyped].
 type Metadata interface {
+	// Gets the value of the specified key.
+	//
+	// Implementations should return [ErrNotFound] if the provided key doesn't have
+	// any associated value with it.
 	Get(key string) (any, error)
+	// Sets the value of the specified key.
+	//
+	// If the key cannot be created or have it's underlying value changed,
+	// implementations should return [ErrImmutable].
+	//
+	// If the type of v is different from the stored value, implementations may return
+	// [ErrInvalidType] if they can't accept different types.
 	Set(key string, v any) error
+	// Deletes the key from metadata. Implementations that cannot delete the key directly,
+	// should set the value a appropriated zero or implementations' default value for that key.
+	//
+	// If the key cannot be created or have it's underlying value changed,
+	// implementations should return [ErrImmutable].
 	Delete(key string) error
 }
 
