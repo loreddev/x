@@ -228,6 +228,9 @@ type Metadata interface {
 	Delete(key string) error
 }
 
+// Type adapter to allow the use of ordinary maps as [Metadata] implementations.
+//
+// If map is nil, Get always returns [ErrNotFound], Set and Delete return [ErrImmutable].
 type Map map[string]any
 
 func (m Map) Get(key string) (any, error) {
