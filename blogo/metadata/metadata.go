@@ -30,6 +30,13 @@ var (
 func GetTyped[T any](m any, key string) (T, error) {
 	var z T
 
+	if m, ok := m.(TypedMetadata); ok {
+		v, err := getTypedFromTyped[T](m, key)
+		if v, ok := v.(T); ok && err == nil {
+			return v, err
+		}
+	}
+
 	v, err := Get(m, key)
 	if err != nil {
 		return z, err
@@ -49,6 +56,60 @@ func GetTyped[T any](m any, key string) (T, error) {
 	}
 
 	return z, ErrInvalidType
+}
+
+func getTypedFromTyped[T any](m TypedMetadata, key string) (any, error) {
+	var z T
+
+	t := reflect.TypeOf(z)
+	if t == nil {
+		return z, ErrInvalidType
+	}
+
+	switch t.Kind() {
+	case reflect.Bool:
+		return m.GetBool(key)
+
+	case reflect.String:
+		return m.GetString(key)
+
+	case reflect.Int:
+		return m.GetInt(key)
+	case reflect.Int8:
+		return m.GetInt8(key)
+	case reflect.Int16:
+		return m.GetInt16(key)
+	case reflect.Int32:
+		return m.GetInt32(key)
+	case reflect.Int64:
+		return m.GetInt64(key)
+
+	case reflect.Uint:
+		return m.GetInt(key)
+	case reflect.Uint8:
+		return m.GetUint8(key)
+	case reflect.Uint16:
+		return m.GetUint16(key)
+	case reflect.Uint32:
+		return m.GetUint32(key)
+	case reflect.Uint64:
+		return m.GetUint64(key)
+	case reflect.Uintptr:
+		return m.GetUintptr(key)
+
+	case reflect.Float32:
+		return m.GetFloat32(key)
+	case reflect.Float64:
+		return m.GetFloat64(key)
+
+	case reflect.Complex64:
+		return m.GetComplex64(key)
+	case reflect.Complex128:
+		return m.GetComplex128(key)
+
+	default:
+		return m.Get(key)
+	}
 }
 
 func Get(m any, key string) (any, error) {
