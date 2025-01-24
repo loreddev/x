@@ -261,6 +261,17 @@ func (m Map) Delete(key string) error {
 	return nil
 }
 
+// Joins multiple [Metadata] objects together so their values can be easily
+// accessed using just one call.
+//
+// [Get]:
+// Iterates over all Metadatas until it finds one that returns a nil-error.
+//
+// [Set]:
+// Sets the specified key on all underlying Metadatas. Ignores errors.
+//
+// [Delete]:
+// Deletes the specified key on all underlying Metadatas. Ignores errors.
 func Join(ms ...Metadata) Metadata {
 	ms = append([]Metadata{Map(make(map[string]any))}, ms...)
 	return joined(ms)
