@@ -15,8 +15,13 @@
 
 package metadata
 
+// TypedMetadata expands the [Metadata] interface to add helper methods for
+// Go's primitive types.
+//
+// [GetTyped] uses this interface for optimization.
 type TypedMetadata interface {
 	Metadata
+
 	GetBool(key string) (bool, error)
 
 	GetString(key string) (string, error)
