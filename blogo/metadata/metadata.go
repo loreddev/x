@@ -305,6 +305,8 @@ func (m joined) Delete(key string) error {
 
 type immutable struct{ Metadata }
 
+// Converts all keys from m to immutable. All calls to Set and Delete
+// are responded with [ErrImmutable].
 func Immutable(m Metadata) Metadata {
 	return &immutable{m}
 }
