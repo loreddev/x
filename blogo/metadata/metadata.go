@@ -176,13 +176,16 @@ func (m Map) Get(key string) (any, error) {
 
 func (m Map) Set(key string, v any) error {
 	if m == nil {
-		return nil
+		return ErrImmutable
 	}
 	m[key] = v
 	return nil
 }
 
 func (m Map) Delete(key string) error {
+	if m == nil {
+		return ErrImmutable
+	}
 	delete(m, key)
 	return nil
 }
