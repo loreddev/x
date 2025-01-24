@@ -27,12 +27,12 @@ type TypedMetadata interface {
 	GetInt32(key string) (int32, error)
 	GetInt64(key string) (int64, error)
 
-	GetUInt(key string) (uint, error)
-	GetUInt8(key string) (uint8, error)
-	GetUInt16(key string) (uint16, error)
-	GetUInt32(key string) (uint32, error)
-	GetUInt64(key string) (uint64, error)
-	GetUIntPtr(key string) (uintptr, error)
+	GetUint(key string) (uint, error)
+	GetUint8(key string) (uint8, error)
+	GetUint16(key string) (uint16, error)
+	GetUint32(key string) (uint32, error)
+	GetUint64(key string) (uint64, error)
+	GetUintPtr(key string) (uintptr, error)
 
 	GetByte(key string) (byte, error)
 
@@ -79,27 +79,27 @@ func (m *typedMetadata) GetInt64(key string) (int64, error) {
 	return GetTyped[int64](m, key)
 }
 
-func (m *typedMetadata) GetUInt(key string) (uint, error) {
+func (m *typedMetadata) GetUint(key string) (uint, error) {
 	return GetTyped[uint](m, key)
 }
 
-func (m *typedMetadata) GetUInt8(key string) (uint8, error) {
+func (m *typedMetadata) GetUint8(key string) (uint8, error) {
 	return GetTyped[uint8](m, key)
 }
 
-func (m *typedMetadata) GetUInt16(key string) (uint16, error) {
+func (m *typedMetadata) GetUint16(key string) (uint16, error) {
 	return GetTyped[uint16](m, key)
 }
 
-func (m *typedMetadata) GetUInt32(key string) (uint32, error) {
+func (m *typedMetadata) GetUint32(key string) (uint32, error) {
 	return GetTyped[uint32](m, key)
 }
 
-func (m *typedMetadata) GetUInt64(key string) (uint64, error) {
+func (m *typedMetadata) GetUint64(key string) (uint64, error) {
 	return GetTyped[uint64](m, key)
 }
 
-func (m *typedMetadata) GetUIntPtr(key string) (uintptr, error) {
+func (m *typedMetadata) GetUintPtr(key string) (uintptr, error) {
 	return GetTyped[uintptr](m, key)
 }
 
