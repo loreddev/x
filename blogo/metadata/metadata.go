@@ -32,6 +32,13 @@ var (
 	ErrNoMetadata  = errors.New("type does not implement or has metadata")
 )
 
+// Gets a value from a [Metadata] or [WithMetadata] objects and tries
+// to convert it to the specified type. If m implements [TypedMetadata],
+// tries to use the typed methods directly.
+//
+// For more information, see [Get].
+//
+// If the value is not of the specified type, returns [ErrInvalidType].
 func GetTyped[T any](m any, key string) (T, error) {
 	var z T
 
@@ -117,6 +124,11 @@ func getTypedFromTyped[T any](m TypedMetadata, key string) (any, error) {
 	}
 }
 
+// Gets a value from m, if it implements [Metadata] or [WithMetadata], otherwise returns
+// [ErrNoMetadata].
+//
+// If there is metadata, but there isn't any value associated with the specified key,
+// returns [ErrNotFound]. More information at [Metadata]'s Get method.
 func Get(m any, key string) (any, error) {
 	data, err := GetMetadata(m)
 	if err != nil {
@@ -125,6 +137,11 @@ func Get(m any, key string) (any, error) {
 	return data.Get(key)
 }
 
+// Sets a value of m, if it implements [Metadata] or [WithMetadata], otherwise returns
+// otherwise returns [ErrNoMetadata].
+//
+// If the underlying metadata is [Immutable], returns [ErrImmutable]. See [Metadata]'s
+// Set method for more information.
 func Set(m any, key string, v any) error {
 	data, err := GetMetadata(m)
 	if err != nil {
@@ -133,6 +150,11 @@ func Set(m any, key string, v any) error {
 	return data.Set(key, v)
 }
 
+// Deletes a value of m, if it implements [Metadata] or [WithMetadata], otherwise returns
+// otherwise returns [ErrNoMetadata].
+//
+// If the underlying metadata is [Immutable], returns [ErrImmutable]. See [Metadata]'s
+// Delete method for more information.
 func Delete(m any, key string) error {
 	data, err := GetMetadata(m)
 	if err != nil {
@@ -141,6 +163,10 @@ func Delete(m any, key string) error {
 	return data.Delete(key)
 }
 
+// Gets the underlying [Metadata] of m. If m implements [Metadata], returns it unchanged,
+// otherwise uses the Metadata method if it implements [WithMetadata].
+//
+// If m doesn't implement any of the interfaces, returns [ErrNoMetadata].
 func GetMetadata(m any) (Metadata, error) {
 	var data Metadata
 
