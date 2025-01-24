@@ -182,7 +182,7 @@ func GetMetadata(m any) (Metadata, error) {
 }
 
 // Types may implement this interface to add [Metadata] to their objects that can
-// be easily accessed via [Get], [Set], [Delete] and [GetMetadata]
+// be easily accessed via [Get], [Set], [Delete] and [GetMetadata].
 type WithMetadata interface {
 	// Returns the underlying [Metadata] of the type.
 	//
