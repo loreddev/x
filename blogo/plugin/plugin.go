@@ -38,3 +38,8 @@ type Sourcer interface {
 	Plugin
 	Source() (fs.FS, error)
 }
+
+type ErrorHandler interface {
+	Plugin
+	Handle(error) (handled bool)
+}
