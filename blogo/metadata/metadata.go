@@ -220,7 +220,7 @@ func (m joined) Delete(key string) error {
 
 type immutable struct{ Metadata }
 
-func Immutable(m Map) Metadata {
+func Immutable(m Metadata) Metadata {
 	return &immutable{m}
 }
 
