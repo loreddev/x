@@ -45,3 +45,84 @@ type TypedMetadata interface {
 	GetComplex128(key string) (complex128, error)
 }
 
+func Typed(m Metadata) TypedMetadata {
+	return &typedMetadata{m}
+}
+
+type typedMetadata struct{ Metadata }
+
+func (m *typedMetadata) GetBool(key string) (bool, error) {
+	return GetTyped[bool](m, key)
+}
+
+func (m *typedMetadata) GetString(key string) (string, error) {
+	return GetTyped[string](m, key)
+}
+
+func (m *typedMetadata) GetInt(key string) (int, error) {
+	return GetTyped[int](m, key)
+}
+
+func (m *typedMetadata) GetInt8(key string) (int8, error) {
+	return GetTyped[int8](m, key)
+}
+
+func (m *typedMetadata) GetInt16(key string) (int16, error) {
+	return GetTyped[int16](m, key)
+}
+
+func (m *typedMetadata) GetInt32(key string) (int32, error) {
+	return GetTyped[int32](m, key)
+}
+
+func (m *typedMetadata) GetInt64(key string) (int64, error) {
+	return GetTyped[int64](m, key)
+}
+
+func (m *typedMetadata) GetUInt(key string) (uint, error) {
+	return GetTyped[uint](m, key)
+}
+
+func (m *typedMetadata) GetUInt8(key string) (uint8, error) {
+	return GetTyped[uint8](m, key)
+}
+
+func (m *typedMetadata) GetUInt16(key string) (uint16, error) {
+	return GetTyped[uint16](m, key)
+}
+
+func (m *typedMetadata) GetUInt32(key string) (uint32, error) {
+	return GetTyped[uint32](m, key)
+}
+
+func (m *typedMetadata) GetUInt64(key string) (uint64, error) {
+	return GetTyped[uint64](m, key)
+}
+
+func (m *typedMetadata) GetUIntPtr(key string) (uintptr, error) {
+	return GetTyped[uintptr](m, key)
+}
+
+func (m *typedMetadata) GetByte(key string) (byte, error) {
+	return GetTyped[byte](m, key)
+}
+
+func (m *typedMetadata) GetRune(key string) (rune, error) {
+	return GetTyped[rune](m, key)
+}
+
+func (m *typedMetadata) GetFloat32(key string) (float32, error) {
+	return GetTyped[float32](m, key)
+}
+
+func (m *typedMetadata) GetFloat64(key string) (float64, error) {
+	return GetTyped[float64](m, key)
+}
+
+func (m *typedMetadata) GetComplex64(key string) (complex64, error) {
+	return GetTyped[complex64](m, key)
+}
+
+func (m *typedMetadata) GetComplex128(key string) (complex128, error) {
+	return GetTyped[complex128](m, key)
+}
