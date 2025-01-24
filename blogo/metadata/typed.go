@@ -46,6 +46,9 @@ type TypedMetadata interface {
 }
 
 func Typed(m Metadata) TypedMetadata {
+	if m, ok := m.(TypedMetadata); ok {
+		return m
+	}
 	return &typedMetadata{m}
 }
 
