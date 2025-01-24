@@ -13,6 +13,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// [Metadata] is a simple key-value data structure that should be used by
+// plugins to pass data between their processes and between plugins.
+//
+// This package provides a collection of types, interfaces and functions to
+// help create and manipulate said data structure.
 package metadata
 
 import (
