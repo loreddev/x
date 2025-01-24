@@ -32,7 +32,7 @@ type TypedMetadata interface {
 	GetUint16(key string) (uint16, error)
 	GetUint32(key string) (uint32, error)
 	GetUint64(key string) (uint64, error)
-	GetUintPtr(key string) (uintptr, error)
+	GetUintptr(key string) (uintptr, error)
 
 	GetByte(key string) (byte, error)
 
@@ -99,7 +99,7 @@ func (m *typedMetadata) GetUint64(key string) (uint64, error) {
 	return GetTyped[uint64](m, key)
 }
 
-func (m *typedMetadata) GetUintPtr(key string) (uintptr, error) {
+func (m *typedMetadata) GetUintptr(key string) (uintptr, error) {
 	return GetTyped[uintptr](m, key)
 }
 
