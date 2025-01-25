@@ -16,7 +16,6 @@
 package core
 
 import (
-	"errors"
 	"fmt"
 	"html/template"
 	"io"
@@ -32,7 +31,12 @@ import (
 // Creates a implementation of [http.Handler] that maps the [(*http.Request).Path] to a file of the
 // same name in the file system provided by the sourcer. Use [Opts] to have more fine grained control
 // over some additional behaviour of the implementation.
-func NewServer(sourcer plugin.Sourcer, renderer plugin.Renderer, opts ...ServerOpts) http.Handler {
+func NewServer(
+	sourcer plugin.Sourcer,
+	renderer plugin.Renderer,
+	onerror plugin.ErrorHandler,
+	opts ...ServerOpts,
+) http.Handler {
 	opt := ServerOpts{}
 	if len(opts) > 0 {
 		opt = opts[0]
@@ -42,9 +46,6 @@ func NewServer(sourcer plugin.Sourcer, renderer plugin.Renderer, opts ...ServerO
 	}
 	if opt.Logger == nil {
 		opt.Logger = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
-	}
-	if opt.TemplateErr == nil {
-		opt.TemplateErr = templateErr
 	}
 
 	var filesystem fs.FS
@@ -59,12 +60,14 @@ func NewServer(sourcer plugin.Sourcer, renderer plugin.Renderer, opts ...ServerO
 	}
 
 	return &server{
-		files:       filesystem,
-		sourcer:     sourcer,
-		renderer:    renderer,
-		assert:      opt.Assertions,
-		log:         opt.Logger,
-		errTemplate: opt.TemplateErr,
+		files: filesystem,
+
+		sourcer:  sourcer,
+		renderer: renderer,
+		onerror:  onerror,
+
+		assert: opt.Assertions,
+		log:    opt.Logger,
 	}
 }
 
@@ -83,9 +86,6 @@ type ServerOpts struct {
 	// and debugging the pipeline of files. By default it uses a logger that writes to [io.Discard],
 	// effectively disabling logging.
 	Logger *slog.Logger
-	// Template used when the handler needs to return a non-200 status code. It is executed with
-	// [ServeError] as data. Uses by default a plain text template.
-	TemplateErr *template.Template
 }
 
 var templateErr = template.Must(template.New("defaultTemplateErr").Parse(
@@ -97,10 +97,10 @@ type server struct {
 
 	sourcer  plugin.Sourcer
 	renderer plugin.Renderer
+	onerror  plugin.ErrorHandler
 
-	assert      tinyssert.Assertions
-	log         *slog.Logger
-	errTemplate *template.Template
+	assert tinyssert.Assertions
+	log    *slog.Logger
 }
 
 func (srv *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -142,7 +142,7 @@ func (srv *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (srv *server) serveHTTPSource(w http.ResponseWriter, r *http.Request) error {
 	srv.assert.NotNil(srv.sourcer, "A sourcer needs to be available")
-	srv.assert.NotNil(srv.errTemplate, "An error template needs to be available in cases of errors")
+	srv.assert.NotNil(srv.onerror, "An error handler needs to be available in cases of errors")
 	srv.assert.NotNil(srv.log)
 	srv.assert.NotNil(w)
 	srv.assert.NotNil(r)
@@ -152,22 +152,34 @@ func (srv *server) serveHTTPSource(w http.ResponseWriter, r *http.Request) error
 
 	fs, err := srv.sourcer.Source()
 	if err != nil {
-		log.Error(
-			"Failed to get file system, returning 500 code",
+		log := log.With(
 			slog.String("err", err.Error()),
+			slog.String("errorhandler", srv.onerror.Name()),
 		)
 
-		w.WriteHeader(http.StatusInternalServerError)
+		log.Error(
+			"Failed to get file system, handling error to ErrorHandler",
+		)
 
-		if err := srv.errTemplate.Execute(w, &ServeError{
-			StatusCode: http.StatusInternalServerError,
-			Err:        err,
-			ErrMessage: err.Error(),
-			Path:       r.URL.Path,
-		}); err != nil {
-			log.Error("Failed to use error template", slog.String("err", err.Error()))
-			_, err = w.Write([]byte(err.Error()))
-			srv.assert.Nil(err)
+		ok := srv.onerror.Handle(&ServeError{
+			Res: w,
+			Req: r,
+			Err: &SourceError{
+				Sourcer: srv.sourcer,
+				Err:     err,
+			},
+		})
+
+		if !ok {
+			log.Error("Failed to handle error with plugin")
+
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf(
+				"Failed to handle error %q with plugin %q",
+				err.Error(),
+				srv.onerror.Name(),
+			)))
+
 		}
 
 		return err
@@ -185,7 +197,7 @@ func (srv *server) serveHTTPOpenFile(
 ) (fs.File, error) {
 	srv.assert.NotZero(name, "Name of file should not be empty")
 	srv.assert.NotNil(srv.files, "A file system needs to be present to open a file")
-	srv.assert.NotNil(srv.errTemplate, "An error template needs to be available in cases of errors")
+	srv.assert.NotNil(srv.onerror, "An error handler needs to be available in cases of errors")
 	srv.assert.NotNil(srv.log)
 	srv.assert.NotNil(w)
 	srv.assert.NotNil(r)
@@ -199,62 +211,49 @@ func (srv *server) serveHTTPOpenFile(
 
 	f, err := srv.files.Open(name)
 
-	if errors.Is(err, fs.ErrNotExist) {
-		log.Warn("File does not exists, returning 404 code",
+	if err != nil || f == nil {
+		if err == nil && f == nil {
+			err = fmt.Errorf(
+				"file system returned a nil file using sourcer %q",
+				srv.sourcer.Name(),
+			)
+		}
+
+		log := log.With(
 			slog.String("err", err.Error()),
+			slog.String("errorhandler", srv.onerror.Name()),
 		)
 
-		w.WriteHeader(http.StatusNotFound)
-
-		if err := srv.errTemplate.Execute(w, &ServeError{
-			StatusCode: http.StatusNotFound,
-			Err:        err,
-			ErrMessage: err.Error(),
-			Path:       r.URL.Path,
-			FileName:   name,
-		}); err != nil {
-			_, err = w.Write([]byte(err.Error()))
-			srv.assert.Nil(err)
-		}
-
-		return nil, err
-	} else if err != nil {
-		log.Error("Failed to open file, returning 500 code",
-			slog.String("err", err.Error()),
+		log.Warn(
+			"Failed to open file, handling error to ErrorHandler",
 		)
 
-		w.WriteHeader(http.StatusInternalServerError)
+		ok := srv.onerror.Handle(&ServeError{
+			Res: w,
+			Req: r,
+			Err: &SourceError{
+				Sourcer: srv.sourcer,
+				Err:     err,
+			},
+		})
 
-		if err := srv.errTemplate.Execute(w, &ServeError{
-			StatusCode: http.StatusInternalServerError,
-			Err:        err,
-			ErrMessage: err.Error(),
-			Path:       r.URL.Path,
-			FileName:   name,
-		}); err != nil {
-			_, err = w.Write([]byte(err.Error()))
-			srv.assert.Nil(err)
+		if !ok {
+			log.Error("Failed to handle error with plugin")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf(
+				"Failed to handle error %q with plugin %q",
+				err.Error(),
+				srv.onerror.Name(),
+			)))
+
 		}
 
 		return nil, err
-	} else if f == nil {
-		log.Error("File system returned a nil file, returning 500 code")
 
-		w.WriteHeader(http.StatusInternalServerError)
+		r, ok := recovr.(fs.FS)
 
-		err := fmt.Errorf("file system returned a nil file using sourcer %q", srv.sourcer.Name())
-		if err := srv.errTemplate.Execute(w, &ServeError{
-			StatusCode: http.StatusInternalServerError,
-			Err:        err,
-			ErrMessage: err.Error(),
-			Path:       r.URL.Path,
-			FileName:   name,
-		}); err != nil {
-			_, err = w.Write([]byte(err.Error()))
-			srv.assert.Nil(err)
 		}
 
-		return nil, err
 	}
 
 	return f, err
@@ -263,7 +262,7 @@ func (srv *server) serveHTTPOpenFile(
 func (srv *server) serveHTTPRender(file fs.File, w http.ResponseWriter, r *http.Request) error {
 	srv.assert.NotNil(file, "A file needs to be present to it to be rendered")
 	srv.assert.NotNil(srv.renderer, "A renderer needs to be present to render a file")
-	srv.assert.NotNil(srv.errTemplate, "An error template needs to be available in cases of errors")
+	srv.assert.NotNil(srv.onerror, "An error handler needs to be available in cases of errors")
 	srv.assert.NotNil(srv.log)
 	srv.assert.NotNil(w)
 	srv.assert.NotNil(r)
@@ -276,34 +275,38 @@ func (srv *server) serveHTTPRender(file fs.File, w http.ResponseWriter, r *http.
 
 	err := srv.renderer.Render(file, w)
 	if err != nil {
-		log.Error("Failed to render file, returning 500 code")
+		log := log.With(
+			slog.String("err", err.Error()),
+			slog.String("errorhandler", srv.onerror.Name()),
+		)
 
-		w.WriteHeader(http.StatusInternalServerError)
+		log.Error(
+			"Failed to render file, handling error to ErrorHandler",
+		)
 
-		if err := srv.errTemplate.Execute(w, &ServeError{
-			StatusCode: http.StatusInternalServerError,
-			Err:        err,
-			ErrMessage: err.Error(),
-			Path:       r.URL.Path,
-		}); err != nil {
-			_, err = w.Write([]byte(err.Error()))
-			srv.assert.Nil(err)
+		ok := srv.onerror.Handle(&ServeError{
+			Res: w,
+			Req: r,
+			Err: &RenderError{
+				Renderer: srv.renderer,
+				File:     file,
+				Err:      err,
+			},
+		})
+
+		if !ok {
+			log.Error("Failed to handle error with plugin")
+
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf(
+				"Failed to handle error %q with plugin %q",
+				err.Error(),
+				srv.onerror.Name(),
+			)))
 		}
 
 		return err
 	}
 
 	return nil
-}
-
-type ServeError struct {
-	StatusCode int
-	Err        error
-	ErrMessage string
-	Path       string
-	FileName   string
-}
-
-func (e *ServeError) Error() string {
-	return fmt.Sprintf("failed to serve file %q to endpoint %q", e.FileName, e.Path)
 }
