@@ -174,11 +174,12 @@ func (srv *server) serveHTTPSource(w http.ResponseWriter, r *http.Request) error
 			log.Error("Failed to handle error with plugin")
 
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(fmt.Sprintf(
+			_, err = w.Write([]byte(fmt.Sprintf(
 				"Failed to handle error %q with plugin %q",
 				err.Error(),
 				srv.onerror.Name(),
 			)))
+			srv.assert.Nil(err)
 
 			return err
 		}
@@ -248,11 +249,12 @@ func (srv *server) serveHTTPOpenFile(
 		if !ok {
 			log.Error("Failed to handle error with plugin")
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(fmt.Sprintf(
+			_, err = w.Write([]byte(fmt.Sprintf(
 				"Failed to handle error %q with plugin %q",
 				err.Error(),
 				srv.onerror.Name(),
 			)))
+			srv.assert.Nil(err)
 
 			return nil, err
 		}
@@ -310,11 +312,12 @@ func (srv *server) serveHTTPRender(file fs.File, w http.ResponseWriter, r *http.
 			log.Error("Failed to handle error with plugin")
 
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(fmt.Sprintf(
+			_, err = w.Write([]byte(fmt.Sprintf(
 				"Failed to handle error %q with plugin %q",
 				err.Error(),
 				srv.onerror.Name(),
 			)))
+			srv.assert.Nil(err)
 
 			return err
 		}
