@@ -161,7 +161,7 @@ func (srv *server) serveHTTPSource(w http.ResponseWriter, r *http.Request) error
 			"Failed to get file system, handling error to ErrorHandler",
 		)
 
-		ok := srv.onerror.Handle(&ServeError{
+		recovr, ok := srv.onerror.Handle(&ServeError{
 			Res: w,
 			Req: r,
 			Err: &SourceError{
@@ -180,9 +180,17 @@ func (srv *server) serveHTTPSource(w http.ResponseWriter, r *http.Request) error
 				srv.onerror.Name(),
 			)))
 
+			return err
 		}
 
-		return err
+		r, ok := recovr.(plugin.Sourcer)
+
+		if !ok {
+			return err
+		}
+
+		fs, err = r.Source()
+		srv.assert.Nil(err)
 	}
 
 	srv.files = fs
@@ -228,7 +236,7 @@ func (srv *server) serveHTTPOpenFile(
 			"Failed to open file, handling error to ErrorHandler",
 		)
 
-		ok := srv.onerror.Handle(&ServeError{
+		recovr, ok := srv.onerror.Handle(&ServeError{
 			Res: w,
 			Req: r,
 			Err: &SourceError{
@@ -246,13 +254,17 @@ func (srv *server) serveHTTPOpenFile(
 				srv.onerror.Name(),
 			)))
 
+			return nil, err
 		}
-
-		return nil, err
 
 		r, ok := recovr.(fs.FS)
 
+		if !ok {
+			return nil, err
 		}
+
+		f, err = r.Open(name)
+		srv.assert.Nil(err)
 
 	}
 
@@ -284,7 +296,7 @@ func (srv *server) serveHTTPRender(file fs.File, w http.ResponseWriter, r *http.
 			"Failed to render file, handling error to ErrorHandler",
 		)
 
-		ok := srv.onerror.Handle(&ServeError{
+		recovr, ok := srv.onerror.Handle(&ServeError{
 			Res: w,
 			Req: r,
 			Err: &RenderError{
@@ -303,9 +315,19 @@ func (srv *server) serveHTTPRender(file fs.File, w http.ResponseWriter, r *http.
 				err.Error(),
 				srv.onerror.Name(),
 			)))
+
+			return err
 		}
 
-		return err
+		r, ok := recovr.(plugin.Renderer)
+
+		if !ok {
+			return err
+		}
+
+		err = r.Render(file, w)
+		srv.assert.Nil(err)
+
 	}
 
 	return nil
