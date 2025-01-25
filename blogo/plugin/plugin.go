@@ -41,5 +41,5 @@ type Sourcer interface {
 
 type ErrorHandler interface {
 	Plugin
-	Handle(error) (handled bool)
+	Handle(error) (recovr any, handled bool)
 }
