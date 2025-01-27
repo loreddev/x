@@ -29,8 +29,12 @@ type ServeError struct {
 	Err error
 }
 
-func (e *ServeError) Error() string {
+func (e ServeError) Error() string {
 	return fmt.Sprintf("failed to serve file on path %q", e.Req.URL.Path)
+}
+
+func (e ServeError) Unwrap() error {
+	return e.Err
 }
 
 type SourceError struct {
@@ -38,8 +42,12 @@ type SourceError struct {
 	Err     error
 }
 
-func (e *SourceError) Error() string {
+func (e SourceError) Error() string {
 	return fmt.Sprintf("failed to source files with sourcer %q", e.Sourcer.Name())
+}
+
+func (e SourceError) Unwrap() error {
+	return e.Err
 }
 
 type RenderError struct {
@@ -48,6 +56,10 @@ type RenderError struct {
 	Err      error
 }
 
-func (e *RenderError) Error() string {
+func (e RenderError) Error() string {
 	return fmt.Sprintf("failed to source files with renderer %q", e.Renderer.Name())
+}
+
+func (e RenderError) Unwrap() error {
+	return e.Err
 }
