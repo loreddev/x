@@ -40,7 +40,9 @@ func New(opts ...Opts) Blogo {
 	}
 
 	if opt.FallbackRenderer == nil {
-		opt.FallbackRenderer = plugins.NewPlainText()
+		opt.FallbackRenderer = plugins.NewPlainText(plugins.PlainTextOpts{
+			Assertions: opt.Assertions,
+		})
 	}
 	if opt.MultiRenderer == nil {
 		opt.MultiRenderer = plugins.NewMultiRenderer()
