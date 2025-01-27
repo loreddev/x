@@ -16,6 +16,7 @@
 package blogo
 
 import (
+	"html/template"
 	"io"
 	"log/slog"
 	"net/http"
@@ -24,6 +25,15 @@ import (
 	"forge.capytal.company/loreddev/x/blogo/plugin"
 	"forge.capytal.company/loreddev/x/blogo/plugins"
 	"forge.capytal.company/loreddev/x/tinyssert"
+)
+
+var defaultNotFoundTemplate = template.Must(
+	template.New("not-found").Parse("404: Blog post {{.Path}} not found"),
+)
+
+var defaultInternalErrTemplate = template.Must(
+	template.New("internal-err").
+		Parse("500: Failed to get blog post {{.Path}} due to error {{.ErrorMsg}}\n{{.Error}}"),
 )
 
 func New(opts ...Opts) Blogo {
@@ -65,10 +75,32 @@ func New(opts ...Opts) Blogo {
 	}
 
 	if opt.FallbackErrorHandler == nil {
-		opt.FallbackErrorHandler = plugins.NewLoggerErrorHandler(
-			opt.Logger.WithGroup("errors"),
-			slog.LevelError,
-		)
+		logger := opt.Logger.WithGroup("errors")
+
+		f := plugins.NewMultiErrorHandler(plugins.MultiErrorHandlerOpts{
+			Assertions: opt.Assertions,
+			Logger:     logger,
+		})
+
+		f.Use(plugins.NewNotFoundErrorHandler(
+			*defaultNotFoundTemplate,
+			plugins.TemplateErrorHandlerOpts{
+				Assertions: opt.Assertions,
+				Logger:     logger.WithGroup("not-found"),
+			},
+		))
+
+		f.Use(plugins.NewTemplateErrorHandler(
+			*defaultNotFoundTemplate,
+			plugins.TemplateErrorHandlerOpts{
+				Assertions: opt.Assertions,
+				Logger:     logger.WithGroup("internal-err"),
+			},
+		))
+
+		f.Use(plugins.NewLoggerErrorHandler(logger.WithGroup("logger"), slog.LevelError))
+
+		opt.FallbackErrorHandler = f
 	}
 	if opt.MultiErrorHandler == nil {
 		opt.MultiErrorHandler = plugins.NewMultiErrorHandler(plugins.MultiErrorHandlerOpts{
