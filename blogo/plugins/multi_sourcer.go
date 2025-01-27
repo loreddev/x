@@ -86,6 +86,13 @@ func (s *multiSourcer) Use(p plugin.Plugin) {
 
 	log := s.log.With(slog.String("plugin", p.Name()))
 
+	if p, ok := p.(plugin.Group); ok {
+		log.Debug("Plugin is a group, using children plugins")
+		for _, p := range p.Plugins() {
+			s.Use(p)
+		}
+	}
+
 	if plg, ok := p.(plugin.Sourcer); ok {
 		log.Debug("Added sourcer plugin")
 		s.plugins = append(s.plugins, plg)
