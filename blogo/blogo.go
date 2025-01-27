@@ -190,7 +190,9 @@ func (b *blogo) Use(p plugin.Plugin) {
 		}
 	}
 
-	b.plugins = append(b.plugins, p)
+	if p != nil {
+		b.plugins = append(b.plugins, p)
+	}
 }
 
 func (b *blogo) ServeHTTP(w http.ResponseWriter, r *http.Request) {
