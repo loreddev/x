@@ -55,7 +55,13 @@ func New(opts ...Opts) Blogo {
 		opt.FallbackSourcer = plugins.NewEmptySourcer()
 	}
 	if opt.MultiSourcer == nil {
-		opt.MultiSourcer = plugins.NewMultiSourcer()
+		opt.MultiSourcer = plugins.NewMultiSourcer(plugins.MultiSourcerOpts{
+			SkipOnSourceError: true,
+			SkipOnFSError:     true,
+
+			Assertions: opt.Assertions,
+			Logger:     opt.Logger.WithGroup("multi-sourcer"),
+		})
 	}
 
 	if opt.FallbackErrorHandler == nil {
