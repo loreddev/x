@@ -132,9 +132,34 @@ func New(opts ...Opts) Blogo {
 	}
 }
 
+// The simplest interface of the [blogo] package's blogging engine.
+//
+// Users should use the [New] function to easily have a implementation
+// that handles plugins and initialization out-of-the-box, or implement
+// their own to have more fine grained control over the package.
 type Blogo interface {
+	// Adds a new plugin to the engine.
+	//
+	// Implementations may accept any type of plugin interface. The default
+	// implementation accepts [plugin.Sourcer], [plugin.Renderer], [plugin.ErrorHandler],
+	// and [plugin.Group], ignoring any other plugins or nil values silently.
 	Use(plugin.Plugin)
+	// Initialize the plugins or internal state if necessary.
+	//
+	// Implementations may call it on the fist request and/or panic on failed initialization.
+	// The default implementation calls Init on the first call to ServeHTTP
 	Init()
+	// The main entry point to access all blog posts.
+	//
+	// Implementations may not expect to the ServeHTTP's request to have a path different from
+	// "/". Users should use http.StripPrefix if they are using it on a defined path, for example:
+	//
+	//   http.Handle("/blog", http.StripPrefix("/blog/", blogo))
+	//
+	// Implementations of this interface may add other method to access the blog posts
+	// besides just http requests. Plugins that register API endpoints will handle them
+	// inside this handler, in other words, endpoints paths will be appended to any path
+	// that this Handler is being used in.
 	http.Handler
 }
 
