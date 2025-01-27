@@ -163,25 +163,51 @@ type Blogo interface {
 	http.Handler
 }
 
+// Options used by [New] to better fine grain the default plugins used by the
+// default [Blogo] implementation.
 type Opts struct {
+	// The plugin that will be used if no [plugin.Renderer] is provided.
+	// Defaults to [plugins.NewPlainText].
 	FallbackRenderer plugin.Renderer
-	MultiRenderer    interface {
+
+	// What plugin will be used to combine multiple renderers if necessary.
+	MultiRenderer interface {
 		plugin.Renderer
 		plugin.WithPlugins
 	}
+
+	// The plugin that will be used if no [plugin.Sourcer] is provided.
+	// Defaults to [plugins.NewEmptySourcer].
 	FallbackSourcer plugin.Sourcer
-	MultiSourcer    interface {
+
+	// What plugin will be used to combine multiple sourcers if necessary.
+	MultiSourcer interface {
 		plugin.Sourcer
 		plugin.WithPlugins
 	}
+
+	// The plugin that will be used if no [plugin.ErrorHandler] is provided.
+	// Defaults to a MultiErrorHandler with [plugins.NewNotFoundErrorHandler],
+	// [plugins.NewTemplateErrorHandler] and [plugins.NewLoggerErrorHandler].
 	FallbackErrorHandler plugin.ErrorHandler
-	MultiErrorHandler    interface {
+
+	// What plugin will be used to combine multiple error handlers.
+	MultiErrorHandler interface {
 		plugin.ErrorHandler
 		plugin.WithPlugins
 	}
 
+	// [tinyssert.Assertions] implementation used Assertions, by default
+	// uses [tinyssert.NewDisabledAssertions] to effectively disable assertions.
+	// Use this if to fail-fast on incorrect states. This is also passed to the
+	// default built-in plugins on initialization.
 	Assertions tinyssert.Assertions
-	Logger     *slog.Logger
+
+	// Logger to be used to send error, warns and debug messages, useful for plugin
+	// development and debugging the pipeline of files. By default it uses a logger
+	// that writes to [io.Discard], effectively disabling logging. This is passed
+	// to the default built-in plugins on initialization.
+	Logger *slog.Logger
 }
 
 type blogo struct {
