@@ -91,7 +91,7 @@ func New(opts ...Opts) Blogo {
 		))
 
 		f.Use(plugins.NewTemplateErrorHandler(
-			*defaultNotFoundTemplate,
+			*defaultInternalErrTemplate,
 			plugins.TemplateErrorHandlerOpts{
 				Assertions: opt.Assertions,
 				Logger:     logger.WithGroup("internal-err"),
