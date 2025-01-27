@@ -237,10 +237,10 @@ func (srv *server) serveHTTPOpenFile(
 			"Failed to open file, handling error to ErrorHandler",
 		)
 
-		recovr, ok := srv.onerror.Handle(&ServeError{
+		recovr, ok := srv.onerror.Handle(ServeError{
 			Res: w,
 			Req: r,
-			Err: &SourceError{
+			Err: SourceError{
 				Sourcer: srv.sourcer,
 				Err:     err,
 			},
@@ -298,10 +298,10 @@ func (srv *server) serveHTTPRender(file fs.File, w http.ResponseWriter, r *http.
 			"Failed to render file, handling error to ErrorHandler",
 		)
 
-		recovr, ok := srv.onerror.Handle(&ServeError{
+		recovr, ok := srv.onerror.Handle(ServeError{
 			Res: w,
 			Req: r,
-			Err: &RenderError{
+			Err: RenderError{
 				Renderer: srv.renderer,
 				File:     file,
 				Err:      err,
