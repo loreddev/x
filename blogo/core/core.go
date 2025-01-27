@@ -17,7 +17,6 @@ package core
 
 import (
 	"fmt"
-	"html/template"
 	"io"
 	"io/fs"
 	"log/slog"
@@ -87,10 +86,6 @@ type ServerOpts struct {
 	// effectively disabling logging.
 	Logger *slog.Logger
 }
-
-var templateErr = template.Must(template.New("defaultTemplateErr").Parse(
-	"{{.StatusCode}} {{.Path}} failed to serve file {{.FileName}} {{.ErrMessage}}\n{{.Err}}",
-))
 
 type server struct {
 	files fs.FS
