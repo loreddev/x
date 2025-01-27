@@ -78,6 +78,13 @@ func (r *multiRenderer) Use(p plugin.Plugin) {
 
 	log := r.log.With(slog.String("plugin", p.Name()))
 
+	if p, ok := p.(plugin.Group); ok {
+		log.Debug("Plugin is a group, using children plugins")
+		for _, p := range p.Plugins() {
+			r.Use(p)
+		}
+	}
+
 	if pr, ok := p.(plugin.Renderer); ok {
 		log.Debug("Added renderer plugin")
 		r.plugins = append(r.plugins, pr)
