@@ -61,6 +61,6 @@ func (h *loggerErrorHandler) log(msg string, args ...any) {
 }
 
 func (h *loggerErrorHandler) Handle(err error) (recovr any, handled bool) {
-	h.log("BLOGO ERROR", err.Error())
+	h.log("BLOGO ERROR", slog.String("err", err.Error()))
 	return nil, true
 }
