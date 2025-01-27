@@ -36,6 +36,14 @@ var defaultInternalErrTemplate = template.Must(
 		Parse("500: Failed to get blog post {{.Path}} due to error {{.ErrorMsg}}\n{{.Error}}"),
 )
 
+// The main function of the package. Creates a new [Blogo] implementation.
+//
+// This implementation automatically adds fallbacks and uses built-in [plugins] to handle
+// multiple sources, renderers and error handlers.
+//
+// Use [Opts] to more fine grained control of what plugins are used on initialization. To have
+// complete control over how plugins are managed, use the [core] package and [plugins]
+// for more information and building blocks to create a custom [Blogo] implementation.
 func New(opts ...Opts) Blogo {
 	opt := Opts{}
 	if len(opts) > 0 {
