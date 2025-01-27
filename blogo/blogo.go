@@ -45,6 +45,7 @@ func New(opts ...Opts) Blogo {
 	if opt.MultiRenderer == nil {
 		opt.MultiRenderer = plugins.NewMultiRenderer()
 	}
+
 	if opt.FallbackSourcer == nil {
 		opt.FallbackSourcer = plugins.NewEmptySourcer()
 	}
@@ -52,13 +53,28 @@ func New(opts ...Opts) Blogo {
 		opt.MultiSourcer = plugins.NewMultiSourcer()
 	}
 
+	if opt.FallbackErrorHandler == nil {
+		opt.FallbackErrorHandler = plugins.NewLoggerErrorHandler(
+			opt.Logger.WithGroup("errors"),
+			slog.LevelError,
+		)
+	}
+	if opt.MultiErrorHandler == nil {
+		opt.MultiErrorHandler = plugins.NewMultiErrorHandler(plugins.MultiErrorHandlerOpts{
+			Assertions: opt.Assertions,
+			Logger:     opt.Logger.WithGroup("errors"),
+		})
+	}
+
 	return &blogo{
 		plugins: []plugin.Plugin{},
 
-		fallbackRenderer: opt.FallbackRenderer,
-		multiRenderer:    opt.MultiRenderer,
-		fallbackSourcer:  opt.FallbackSourcer,
-		multiSourcer:     opt.MultiSourcer,
+		fallbackRenderer:     opt.FallbackRenderer,
+		multiRenderer:        opt.MultiRenderer,
+		fallbackSourcer:      opt.FallbackSourcer,
+		multiSourcer:         opt.MultiSourcer,
+		fallbackErrorHandler: opt.FallbackErrorHandler,
+		multiErrorHandler:    opt.MultiErrorHandler,
 
 		assert: opt.Assertions,
 		log:    opt.Logger,
@@ -82,6 +98,11 @@ type Opts struct {
 		plugin.Sourcer
 		plugin.WithPlugins
 	}
+	FallbackErrorHandler plugin.ErrorHandler
+	MultiErrorHandler    interface {
+		plugin.ErrorHandler
+		plugin.WithPlugins
+	}
 
 	Assertions tinyssert.Assertions
 	Logger     *slog.Logger
@@ -98,6 +119,11 @@ type blogo struct {
 	fallbackSourcer plugin.Sourcer
 	multiSourcer    interface {
 		plugin.Sourcer
+		plugin.WithPlugins
+	}
+	fallbackErrorHandler plugin.ErrorHandler
+	multiErrorHandler    interface {
+		plugin.ErrorHandler
 		plugin.WithPlugins
 	}
 
@@ -151,10 +177,11 @@ func (b *blogo) Init() {
 
 	sourcer := b.initSourcer()
 	renderer := b.initRenderer()
+	errorHandler := b.initErrorHandler()
 
 	log.Debug("Constructing Blogo server")
 
-	b.server = core.NewServer(sourcer, renderer, core.ServerOpts{
+	b.server = core.NewServer(sourcer, renderer, errorHandler, core.ServerOpts{
 		Assertions: b.assert,
 		Logger:     b.log.WithGroup("server"),
 	})
@@ -246,4 +273,47 @@ func (b *blogo) initSourcer() plugin.Sourcer {
 	}
 
 	return b.multiSourcer
+}
+
+func (b *blogo) initErrorHandler() plugin.ErrorHandler {
+	b.assert.NotNil(b.plugins, "Plugins needs to be not-nil")
+	b.assert.NotNil(b.fallbackErrorHandler, "FallbackErrorHandler needs to be not-nil")
+	b.assert.NotNil(b.multiErrorHandler, "MultiErrorHandler needs to be not-nil")
+	b.assert.NotNil(b.log)
+
+	log := b.log.With()
+	log.Debug("Initializing Blogo ErrorHandler plugins")
+
+	errorHandlers := []plugin.ErrorHandler{}
+
+	for _, p := range b.plugins {
+		if s, ok := p.(plugin.ErrorHandler); ok {
+			log.Debug("Adding ErrorHandler", slog.String("errorHandler", s.Name()))
+
+			errorHandlers = append(errorHandlers, s)
+		}
+	}
+
+	if len(errorHandlers) == 0 {
+		log.Debug("No ErrorHandler avaiable, using %q as fallback",
+			slog.String("errorHandler", b.fallbackErrorHandler.Name()))
+
+		return b.fallbackErrorHandler
+	}
+
+	if len(errorHandlers) == 1 {
+		log.Debug("Just one ErrorHandler found, using it directly",
+			slog.String("errorHandler", errorHandlers[0].Name()))
+
+		return errorHandlers[0]
+	}
+
+	log.Debug("Multiple ErrorHandlers found, using MultiSourcer to combine them",
+		slog.String("errorHandler", b.multiErrorHandler.Name()),
+	)
+	for _, s := range errorHandlers {
+		b.multiErrorHandler.Use(s)
+	}
+
+	return b.multiErrorHandler
 }
