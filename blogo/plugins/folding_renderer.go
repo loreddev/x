@@ -171,7 +171,7 @@ func (f *foldingFile) Write(p []byte) (int, error) {
 
 func (f *foldingFile) Fold() error {
 	f.read.Reset()
-	if _, err := io.Copy(f.writer, f.read); err != nil {
+	if _, err := io.Copy(f.read, f.writer); err != nil {
 		return err
 	}
 	f.writer.Reset()
