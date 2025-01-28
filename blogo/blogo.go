@@ -63,7 +63,7 @@ func New(opts ...Opts) Blogo {
 		})
 	}
 	if opt.MultiRenderer == nil {
-		opt.MultiRenderer = plugins.NewMultiRenderer(plugins.MultiRendererOpts{
+		opt.MultiRenderer = plugins.NewBufferedMultiRenderer(plugins.BufferedMultiRendererOpts{
 			Assertions: opt.Assertions,
 			Logger:     opt.Logger.WithGroup("multi-renderer"),
 		})
