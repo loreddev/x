@@ -245,7 +245,7 @@ type repositoryDirFile struct {
 }
 
 func (f *repositoryDirFile) Read(p []byte) (int, error) {
-	return 0, nil
+	return 0, io.EOF
 }
 
 func (f *repositoryDirFile) Close() error {
