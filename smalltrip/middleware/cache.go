@@ -28,6 +28,13 @@ func SmartCache(options ...CacheOption) Middleware {
 	return Cache(options...)
 }
 
+// TODO: PersistentCache is a smarter implementation of SmartCache that handles requests
+// with authorization, Cache-Control from the client, and stores responses into
+// a persistent storage solution like Redis.
+func PersistentCache(options ...CacheOption) Middleware {
+	return SmartCache(options...)
+}
+
 type CacheOption func(*directives)
 
 func CacheMaxAge(t time.Duration) CacheOption {
