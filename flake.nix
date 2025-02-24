@@ -24,9 +24,8 @@
         buildInputs = with pkgs; [
           # Go tools
           go
-          gofumpt
           golangci-lint
-          golines
+          gofumpt
           gotools
           delve
         ];
