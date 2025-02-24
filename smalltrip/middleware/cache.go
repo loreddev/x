@@ -22,6 +22,11 @@ func Cache(options ...CacheOption) Middleware {
 	}
 }
 
+// TODO: SmartCache is a smarter implementation of Cache that handles requests
+// with authorization, Cache-Control from the client, and others.
+func SmartCache(options ...CacheOption) Middleware {
+	return Cache(options...)
+}
 
 type CacheOption func(*directives)
 
