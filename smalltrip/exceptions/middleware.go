@@ -162,6 +162,13 @@ func HandlerTemplates(ts map[int]*template.Template, fallback HandlerFunc) Handl
 
 func HandlerTemplate(t *template.Template, fallback HandlerFunc) HandlerFunc {
 	return func(e Exception, w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		for k := range e.headers {
+			w.Header().Set(k, e.headers.Get(k))
+		}
+
+		w.WriteHeader(e.Status)
+
 		err := t.Execute(w, e)
 		if err != nil {
 			e.Err = errors.Join(fmt.Errorf("executing Exception template: %s", e.Error()), e.Err)
@@ -183,6 +190,10 @@ func HandlerJSON(fallback HandlerFunc) HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
+		for k := range e.headers {
+			w.Header().Set(k, e.headers.Get(k))
+		}
+
 		w.WriteHeader(e.Status)
 
 		_, err = w.Write(j)
@@ -199,6 +210,10 @@ var _ HandlerFunc = HandlerJSON(HandlerText)
 
 func HandlerText(e Exception, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
+	for k := range e.headers {
+		w.Header().Set(k, e.headers.Get(k))
+	}
+
 	w.WriteHeader(e.Status)
 
 	_, err := w.Write([]byte(fmt.Sprintf(

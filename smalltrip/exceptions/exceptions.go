@@ -18,6 +18,8 @@ type Exception struct {
 	// request context. Setting this field overrides any provided by the middleware
 	// and can be used to add a handler when using a middleware is not possible.
 	handler HandlerFunc `json:"-"`
+
+	headers http.Header
 }
 
 var (
