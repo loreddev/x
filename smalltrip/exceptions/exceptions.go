@@ -12,6 +12,11 @@ type Exception struct {
 	Message  string   `json:"message"`         // User friendly message
 	Err      error    `json:"error,omitempty"` // Go error
 	Severity Severity `json:"severity"`        // Exception level
+
+	// Handler to be used. This is normally provided by a middleware via the
+	// request context. Setting this field overrides any provided by the middleware
+	// and can be used to add a handler when using a middleware is not possible.
+	handler HandlerFunc `json:"-"`
 }
 
 var (
@@ -32,6 +37,8 @@ func (e Exception) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if e.handler != nil {
 		e.handler(e, w, r)
 	}
+
+	e.handler = HandlerJSON(HandlerText)
 
 	handler, ok := r.Context().Value(handlerFuncCtxKey).(HandlerFunc)
 	if !ok {
