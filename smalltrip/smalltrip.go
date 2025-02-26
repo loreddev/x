@@ -97,7 +97,7 @@ func (r *router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func (r *router) Routes() []Route {
 	r.assert.NotNil(r.routes)
 
-	rs := make([]Route, len(r.routes), len(r.routes))
+	rs := make([]Route, len(r.routes))
 
 	var i int
 	for _, v := range r.routes {
