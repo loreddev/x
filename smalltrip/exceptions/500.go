@@ -5,6 +5,11 @@ import (
 	"net/http"
 )
 
+// InternalServerError creates a new [Exception] with the "500 Internal Server Error"
+// status code, a human readable message and the provided error describing what in
+// the request was wrong. The severity of this Exception by default is [ERROR].
+//
+// An error should be provided to add context to the exception.
 func InternalServerError(err error, opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusInternalServerError),
@@ -18,6 +23,9 @@ func InternalServerError(err error, opts ...Option) Exception {
 	return newException(o...)
 }
 
+// NotImplemented creates a new [Exception] with the "501 Not Implemented"
+// status code, a human readable message and the provided error describing what in
+// the request was wrong. The severity of this Exception by default is [ERROR].
 func NotImplemented(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusNotImplemented),
@@ -31,6 +39,9 @@ func NotImplemented(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// BadGateway creates a new [Exception] with the "502 Bad Gateway"
+// status code, a human readable message and the provided error describing what in
+// the request was wrong. The severity of this Exception by default is [ERROR].
 func BadGateway(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusBadGateway),
@@ -44,6 +55,9 @@ func BadGateway(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// ServiceUnavailable creates a new [Exception] with the "503 Service Unavailable"
+// status code, a human readable message and the provided error describing what in
+// the request was wrong. The severity of this Exception by default is [ERROR].
 func ServiceUnavailable(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusServiceUnavailable),
@@ -57,6 +71,9 @@ func ServiceUnavailable(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// GatewayTimeout creates a new [Exception] with the "504 Gateway Timeout"
+// status code, a human readable message and the provided error describing what in
+// the request was wrong. The severity of this Exception by default is [ERROR].
 func GatewayTimeout(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusGatewayTimeout),
@@ -70,6 +87,9 @@ func GatewayTimeout(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// HTTPVersionNotSupported creates a new [Exception] with the "505 HTTP Version Not Supported"
+// status code, a human readable message and the provided error describing what in
+// the request was wrong. The severity of this Exception by default is [ERROR].
 func HTTPVersionNotSupported(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusHTTPVersionNotSupported),
@@ -83,6 +103,9 @@ func HTTPVersionNotSupported(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// VariantAlsoNegotiates creates a new [Exception] with the "506 Variant Also Negotiates"
+// status code, a human readable message and the provided error describing what in
+// the request was wrong. The severity of this Exception by default is [ERROR].
 func VariantAlsoNegotiates(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusVariantAlsoNegotiates),
@@ -96,6 +119,9 @@ func VariantAlsoNegotiates(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// InsufficientStorage creates a new [Exception] with the "507 Insufficient Storage"
+// status code, a human readable message and the provided error describing what in
+// the request was wrong. The severity of this Exception by default is [ERROR].
 func InsufficientStorage(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusInsufficientStorage),
@@ -109,6 +135,9 @@ func InsufficientStorage(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// LoopDetected creates a new [Exception] with the "508 Loop Detected"
+// status code, a human readable message and the provided error describing what in
+// the request was wrong. The severity of this Exception by default is [ERROR].
 func LoopDetected(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusLoopDetected),
@@ -122,6 +151,9 @@ func LoopDetected(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// NotExtended creates a new [Exception] with the "510 Not Extended"
+// status code, a human readable message and the provided error describing what in
+// the request was wrong. The severity of this Exception by default is [ERROR].
 func NotExtended(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusLoopDetected),
@@ -135,6 +167,9 @@ func NotExtended(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// NetworkAuthenticationRequired creates a new [Exception] with the "511 Network Authentication Required"
+// status code, a human readable message and the provided error describing what in
+// the request was wrong. The severity of this Exception by default is [ERROR].
 func NetworkAuthenticationRequired(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusNetworkAuthenticationRequired),
