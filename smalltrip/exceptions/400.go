@@ -7,6 +7,9 @@ import (
 	"strings"
 )
 
+// BadRequest creates a new [Exception] with the "400 Bad Request" status code,
+// a human readable message and the provided error describing what in the request
+// was wrong. The severity of this Exception by default is [WARN].
 func BadRequest(err error, opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusBadRequest),
@@ -20,6 +23,10 @@ func BadRequest(err error, opts ...Option) Exception {
 	return newException(o...)
 }
 
+// Unathorized creates a new [Exception] with the "401 Unathorized" status code,
+// a human readable message and error. The severity of this Exception by default
+// is [WARN]. A "WWW-Authenticate" header should be sent with this exception,
+// provided via the "authenticate" parameter.
 func Unathorized(authenticate string, opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusUnauthorized),
@@ -35,6 +42,9 @@ func Unathorized(authenticate string, opts ...Option) Exception {
 	return newException(o...)
 }
 
+// PaymentRequired creates a new [Exception] with the "402 Payment Required" status code,
+// a human readable message and error. The severity of this Exception by default
+// is [WARN].
 func PaymentRequired(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusPaymentRequired),
@@ -48,6 +58,9 @@ func PaymentRequired(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// Forbidden creates a new [Exception] with the "403 Forbidden" status code,
+// a human readable message and error. The severity of this Exception by default
+// is [WARN].
 func Forbidden(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusForbidden),
@@ -61,6 +74,9 @@ func Forbidden(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// NotFound creates a new [Exception] with the "404 Not Found" status code,
+// a human readable message and error. The severity of this Exception by default
+// is [WARN].
 func NotFound(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusNotFound),
@@ -74,6 +90,9 @@ func NotFound(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// MethodNotAllowed creates a new [Exception] with the "405 Method Not Allowed" status code,
+// a human readable message and error, and a "Allow" header with the methods provided via the
+// "allowed" parameter. The severity of this Exception by default is [WARN].
 func MethodNotAllowed(allowed []string, opts ...Option) Exception {
 	a := strings.Join(allowed, ", ")
 	o := []Option{
@@ -90,6 +109,9 @@ func MethodNotAllowed(allowed []string, opts ...Option) Exception {
 	return newException(o...)
 }
 
+// NotAcceptable creates a new [Exception] with the "406 Not Acceptable" status code,
+// a human readable message and error, and a list of accepted mime types provided via
+// the "accepted" parameter. The severity of this Exception by default is [WARN].
 func NotAcceptable(accepted []string, opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusNotAcceptable),
@@ -104,6 +126,10 @@ func NotAcceptable(accepted []string, opts ...Option) Exception {
 	return newException(o...)
 }
 
+// ProxyAuthenticationRequired creates a new [Exception] with the "407 Proxy Authentication Required"
+// status code, a human readable message and error. The severity of this Exception by default is [WARN].
+// A "Proxy-Authenticate" header should be sent with this exception, provided via the
+// "authenticate" parameter.
 func ProxyAuthenticationRequired(authenticate string, opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusProxyAuthRequired),
@@ -119,6 +145,9 @@ func ProxyAuthenticationRequired(authenticate string, opts ...Option) Exception 
 	return newException(o...)
 }
 
+// RequestTimeout creates a new [Exception] with the "408 Request Timeout" status code, a human
+// readable message and error, with a "Connection: close" header alongside. The severity of this
+// Exception by default is [WARN].
 func RequestTimeout(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusRequestTimeout),
@@ -134,6 +163,8 @@ func RequestTimeout(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// Conflict creates a new [Exception] with the "409 Conflict" status code, a human
+// readable message and error. The severity of this Exception by default is [WARN].
 func Conflict(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusConflict),
@@ -147,6 +178,8 @@ func Conflict(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// Gone creates a new [Exception] with the "410 Gone" status code, a human
+// readable message and error. The severity of this Exception by default is [WARN].
 func Gone(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusGone),
@@ -160,6 +193,9 @@ func Gone(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// LengthRequired creates a new [Exception] with the "411 Length Required" status
+// code, a human readable message and error. The severity of this Exception by
+// default is [WARN].
 func LengthRequired(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusLengthRequired),
@@ -173,6 +209,9 @@ func LengthRequired(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// PreconditionFailed creates a new [Exception] with the "412 Precondition Failed"
+// status code, a human readable message and error. The severity of this Exception
+// by default is [WARN].
 func PreconditionFailed(err error, opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusPreconditionFailed),
@@ -186,6 +225,9 @@ func PreconditionFailed(err error, opts ...Option) Exception {
 	return newException(o...)
 }
 
+// ContentTooLarge creates a new [Exception] with the "413 Content Too Large"
+// status code, a human readable message and error. The severity of this
+// Exception by default is [WARN].
 func ContentTooLarge(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusRequestEntityTooLarge),
@@ -199,6 +241,9 @@ func ContentTooLarge(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// URITooLong creates a new [Exception] with the "414 URI Too Long"
+// status code, a human readable message and error. The severity of this
+// Exception by default is [WARN].
 func URITooLong(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusRequestURITooLong),
@@ -212,6 +257,9 @@ func URITooLong(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// UnsupportedMediaType creates a new [Exception] with the "415 Unsupported Media Type"
+// status code, a human readable message and error. The severity of this Exception by
+// default is [WARN].
 func UnsupportedMediaType(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusUnsupportedMediaType),
@@ -225,6 +273,10 @@ func UnsupportedMediaType(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// RangeNotSatisfiable creates a new [Exception] with the "416 Range Not Satisfiable"
+// status code, a human readable message and error. The severity of this Exception by
+// default is [WARN]. A "Content-Range" header is sent with the provided number of
+// bytes via the "contentRange" parameter.
 func RangeNotSatisfiable(contentRange int, opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusUnsupportedMediaType),
@@ -240,6 +292,9 @@ func RangeNotSatisfiable(contentRange int, opts ...Option) Exception {
 	return newException(o...)
 }
 
+// ExpectationFailed creates a new [Exception] with the "417 Expectation Failed"
+// status code, a human readable message and error. The severity of this Exception
+// by default is [WARN].
 func ExpectationFailed(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusExpectationFailed),
@@ -253,6 +308,9 @@ func ExpectationFailed(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// ImATeapot creates a new [Exception] with the "418 I'm a teapot" status code,
+// a human readable message and error. The severity of this Exception by default
+// is [WARN].
 func ImATeapot(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusTeapot),
@@ -266,6 +324,9 @@ func ImATeapot(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// MisdirectedRequest creates a new [Exception] with the "421 Misdirected Request"
+// status code, a human readable message and error. The severity of this Exception
+// by default is [WARN].
 func MisdirectedRequest(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusMisdirectedRequest),
@@ -279,6 +340,9 @@ func MisdirectedRequest(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// UnprocessableContent creates a new [Exception] with the "422 Unprocessable Content"
+// status code, a human readable message and error. The severity of this Exception
+// by default is [WARN].
 func UnprocessableContent(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusUnprocessableEntity),
@@ -292,6 +356,8 @@ func UnprocessableContent(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// Locked creates a new [Exception] with the "423 Locked" status code, a human
+// readable message and error. The severity of this Exception by default is [WARN].
 func Locked(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusUnprocessableEntity),
@@ -305,6 +371,9 @@ func Locked(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// FailedDependency creates a new [Exception] with the "424 Failed Dependency"
+// status code, a human readable message and error. The severity of this
+// Exception by default is [WARN].
 func FailedDependency(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusFailedDependency),
@@ -318,6 +387,9 @@ func FailedDependency(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// TooEarly creates a new [Exception] with the "425 Too Early" status code,
+// a human readable message and error. The severity of this Exception by
+// default is [WARN].
 func TooEarly(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusTooEarly),
@@ -331,6 +403,10 @@ func TooEarly(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// UpgradeRequired creates a new [Exception] with the "426 Upgrade Required"
+// status code, a human readable message and error. The severity of this
+// Exception by default is [WARN]. A "Upgrade" header is sent with the value
+// provided by the "upgrade" parameter.
 func UpgradeRequired(upgrade string, opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusUpgradeRequired),
@@ -345,6 +421,9 @@ func UpgradeRequired(upgrade string, opts ...Option) Exception {
 	return newException(o...)
 }
 
+// PreconditionRequired creates a new [Exception] with the "428 Precondition Required"
+// status code, a human readable message and error. The severity of this Exception
+// by default is [WARN].
 func PreconditionRequired(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusPreconditionRequired),
@@ -358,6 +437,9 @@ func PreconditionRequired(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// TooManyRequests creates a new [Exception] with the "429 Too Many Requests"
+// status code, a human readable message and error. The severity of this
+// Exception by default is [WARN].
 func TooManyRequests(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusTooManyRequests),
@@ -371,6 +453,9 @@ func TooManyRequests(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// RequestHeaderFieldsTooLarge creates a new [Exception] with the
+// "431 Request Header Fields Too Large" status code, a human readable
+// message and error. The severity of this Exception by default is [WARN].
 func RequestHeaderFieldsTooLarge(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusRequestHeaderFieldsTooLarge),
@@ -384,6 +469,9 @@ func RequestHeaderFieldsTooLarge(opts ...Option) Exception {
 	return newException(o...)
 }
 
+// UnavailableForLegalReasons creates a new [Exception] with the
+// "451 Unavailable For Legal Reasons" status code, a human readable
+// message and error. The severity of this Exception by default is [WARN].
 func UnavailableForLegalReasons(opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusUnavailableForLegalReasons),
