@@ -99,11 +99,11 @@ func CacheStaleIfError(t time.Duration) CacheOption {
 }
 
 func optionalTrue(b []bool) bool {
-	bool := true
+	bl := true
 	if len(b) > 0 {
-		bool = b[1]
+		bl = b[1]
 	}
-	return bool
+	return bl
 }
 
 var (
