@@ -439,9 +439,8 @@ func (as *assertions) fail(failureMsg string, msg ...any) {
 func (as *assertions) failOrPanic(failureMsg string, msg ...any) bool {
 	if as.panic {
 		return as.FailNow(failureMsg, msg...)
-	} else {
-		return as.Fail(failureMsg, msg...)
 	}
+	return as.Fail(failureMsg, msg...)
 }
 
 func fmtMessage(msg []any) string {
