@@ -3,6 +3,7 @@ package exceptions
 import (
 	"encoding"
 	"fmt"
+	"log/slog"
 )
 
 type Severity int
@@ -14,11 +15,11 @@ var (
 )
 
 const (
-	DEBUG Severity = -4
-	INFO  Severity = 0
-	WARN  Severity = 4
-	ERROR Severity = 8
-	FATAL Severity = 16
+	DEBUG Severity = Severity(slog.LevelDebug)
+	INFO  Severity = Severity(slog.LevelInfo)
+	WARN  Severity = Severity(slog.LevelWarn)
+	ERROR Severity = Severity(slog.LevelError)
+	FATAL Severity = Severity(slog.LevelError * 2)
 
 	stringDEBUG = "DEBUG"
 	stringINFO  = "INFO"
