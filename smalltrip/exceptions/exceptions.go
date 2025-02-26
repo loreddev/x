@@ -50,3 +50,77 @@ func (e Exception) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	handler(e, w, r)
 }
+
+func newException(options ...Option) Exception {
+	e := Exception{
+		Status:   http.StatusInternalServerError,
+		Code:     "Internal Server Error",
+		Message:  "",
+		Err:      nil,
+		Severity: ERROR,
+	}
+
+	for _, option := range options {
+		option(&e)
+	}
+
+	return e
+}
+
+type Option = func(*Exception)
+
+func WithStatus(s int) Option {
+	return func(e *Exception) { e.Status = s }
+}
+
+func WithCode(c string) Option {
+	return func(e *Exception) { e.Code = c }
+}
+
+func WithMessage(m string) Option {
+	return func(e *Exception) { e.Message = m }
+}
+
+func WithError(err error, errs ...error) Option {
+	if len(errs) > 0 {
+		es := []error{err}
+		es = append(es, errs...)
+		err = errors.Join(es...)
+	}
+	return func(e *Exception) { e.Err = err }
+}
+
+func WithSeverity(s Severity) Option {
+	return func(e *Exception) { e.Severity = s }
+}
+
+func WithData(key string, v any) Option {
+	return func(e *Exception) {
+		if e.Data == nil {
+			e.Data = make(map[string]any)
+		}
+		e.Data[key] = v
+	}
+}
+
+func WithHeader(header string, v string) Option {
+	return func(e *Exception) {
+		if e.headers == nil {
+			e.headers = http.Header{}
+		}
+		e.headers.Add(header, v)
+	}
+}
+
+func WithoutHeader(header string) Option {
+	return func(e *Exception) {
+		if e.headers == nil {
+			e.headers = http.Header{}
+		}
+		e.headers.Del(header)
+	}
+}
+
+func WithHandler(h HandlerFunc) Option {
+	return func(e *Exception) { e.handler = h }
+}
