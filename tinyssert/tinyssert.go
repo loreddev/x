@@ -520,10 +520,10 @@ func isTest(name, prefix string) bool {
 
 type disabledAssertions struct{}
 
-// Creates a new implementation of Assertions that always return true, with the exception
-// of [Assertions.Fail] and [Assertions.FailNow] which returns false, and [Assertions.CallerInfo]
-// which returns the actual caller info (uses [CallerInfo] underlying). It is useful it you use
-// assertions in production and want to disable them without changing any code.
+// NewDisabledAssertions creates a new implementation of Assertions that always return true, with
+// the exception of [Assertions.Fail] and [Assertions.FailNow] which returns false, and
+// [Assertions.CallerInfo] which returns the actual caller info (uses [CallerInfo] underlying).
+// It is useful it you use  assertions in production and want to disable them without changing any code.
 func NewDisabledAssertions() Assertions {
 	return &disabledAssertions{}
 }
