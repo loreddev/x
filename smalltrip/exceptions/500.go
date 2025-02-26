@@ -3,6 +3,7 @@ package exceptions
 import (
 	"errors"
 	"net/http"
+	"time"
 )
 
 // InternalServerError creates a new [Exception] with the "500 Internal Server Error"
@@ -58,13 +59,18 @@ func BadGateway(opts ...Option) Exception {
 // ServiceUnavailable creates a new [Exception] with the "503 Service Unavailable"
 // status code, a human readable message and the provided error describing what in
 // the request was wrong. The severity of this Exception by default is [ERROR].
-func ServiceUnavailable(opts ...Option) Exception {
+//
+// A Retry-After header is passed with the duration provided by the "retryAfter"
+// parameter.
+func ServiceUnavailable(retryAfter time.Time, opts ...Option) Exception {
 	o := []Option{
 		WithStatus(http.StatusServiceUnavailable),
 		WithCode("Service Unavailable"),
 		WithMessage("Not ready to handle the request."),
 		WithError(errors.New("server is not ready to handle the request")),
 		WithSeverity(ERROR),
+
+		WithHeader("Retry-After", retryAfter.Format("Mon, 02 Jan 2006 15:04:05 GMT")),
 	}
 	o = append(o, opts...)
 
