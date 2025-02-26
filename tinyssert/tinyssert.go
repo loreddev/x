@@ -11,7 +11,7 @@
 // under the licenses is distributed on as "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, either express or implied.
 //
-// An original copy of this file can be found at http://forge.capytal.company/loreddev/x/assert/assert.go.
+// An original copy of this file can be found at http://forge.capytal.company/loreddev/x/tinyssert/tinyssert.go.
 
 // # Tiny Assert
 //
