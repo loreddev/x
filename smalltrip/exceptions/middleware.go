@@ -52,6 +52,20 @@ func Middleware(options ...MiddlewareOption) middleware.Middleware {
 	})
 }
 
+func PanicMiddleware() middleware.Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			defer func() {
+				if r := recover(); r != nil {
+					err := fmt.Errorf("panic recovered: %+v", r)
+					InternalServerError(err).ServeHTTP(w, req)
+				}
+			}()
+			next.ServeHTTP(w, req)
+		})
+	}
+}
+
 var defaultTemplate = template.Must(template.New("xx-small-trip-default-Exception-template").Parse(`
 Status: {{ .Status }}
 Code: {{ .Code }}
