@@ -62,7 +62,7 @@ func (r *router) Handle(pattern string, handler http.Handler) {
 	if router, ok := handler.(RouteGroup); ok {
 		r.log.Debug("Route has nested router as handler, handling router's routes")
 
-		r.handleRouter(pattern, router)
+		r.handleGroup(pattern, router)
 		return
 	}
 
@@ -108,7 +108,7 @@ func (r *router) Routes() []Route {
 	return rs
 }
 
-func (r *router) handleRouter(pattern string, group RouteGroup) {
+func (r *router) handleGroup(pattern string, group RouteGroup) {
 	r.assert.NotNil(group, "Router should not be nil, invalid state.")
 	r.assert.NotZero(pattern, "Pattern should not be empty, invalid state.")
 	r.assert.NotNil(r.mux)
