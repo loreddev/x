@@ -528,17 +528,17 @@ func isTest(name, prefix string) bool {
 
 type disabledAssertions struct{}
 
-func (_ *disabledAssertions) OK(any, ...any) bool              { return true }
-func (_ *disabledAssertions) Equal(_, _ any, _ ...any) bool    { return true }
-func (_ *disabledAssertions) NotEqual(_, _ any, _ ...any) bool { return true }
-func (_ *disabledAssertions) Nil(any, ...any) bool             { return true }
-func (_ *disabledAssertions) NotNil(any, ...any) bool          { return true }
-func (_ *disabledAssertions) True(any, ...any) bool            { return true }
-func (_ *disabledAssertions) False(any, ...any) bool           { return true }
-func (_ *disabledAssertions) Zero(any, ...any) bool            { return true }
-func (_ *disabledAssertions) NotZero(any, ...any) bool         { return true }
-func (_ *disabledAssertions) Panic(func(), ...any) bool        { return true }
-func (_ *disabledAssertions) NotPanic(func(), ...any) bool     { return true }
-func (_ *disabledAssertions) Fail(string, ...any) bool         { return false }
-func (_ *disabledAssertions) FailNow(string, ...any) bool      { return false }
-func (_ *disabledAssertions) CallerInfo() []string             { return defaultAssert.CallerInfo() }
+func (*disabledAssertions) OK(any, ...any) bool              { return true }
+func (*disabledAssertions) Equal(_, _ any, _ ...any) bool    { return true }
+func (*disabledAssertions) NotEqual(_, _ any, _ ...any) bool { return true }
+func (*disabledAssertions) Nil(any, ...any) bool             { return true }
+func (*disabledAssertions) NotNil(any, ...any) bool          { return true }
+func (*disabledAssertions) True(any, ...any) bool            { return true }
+func (*disabledAssertions) False(any, ...any) bool           { return true }
+func (*disabledAssertions) Zero(any, ...any) bool            { return true }
+func (*disabledAssertions) NotZero(any, ...any) bool         { return true }
+func (*disabledAssertions) Panic(func(), ...any) bool        { return true }
+func (*disabledAssertions) NotPanic(func(), ...any) bool     { return true }
+func (*disabledAssertions) Fail(string, ...any) bool         { return false }
+func (*disabledAssertions) FailNow(string, ...any) bool      { return false }
+func (*disabledAssertions) CallerInfo() []string             { return defaultAssert.CallerInfo() }
