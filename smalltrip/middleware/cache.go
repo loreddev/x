@@ -142,6 +142,8 @@ type directives struct {
 	staleIfError         *time.Duration
 }
 
+var _ fmt.Stringer = directives{}
+
 func (d directives) String() string {
 	ds := []string{}
 
