@@ -58,7 +58,7 @@ func PanicMiddleware() middleware.Middleware {
 			defer func() {
 				if r := recover(); r != nil {
 					err := fmt.Errorf("panic recovered: %+v", r)
-					InternalServerError(err).ServeHTTP(w, req)
+					InternalServerError(err, WithSeverity(FATAL)).ServeHTTP(w, req)
 				}
 			}()
 			next.ServeHTTP(w, req)
