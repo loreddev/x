@@ -10,7 +10,7 @@ import (
 	"slices"
 	"strings"
 
-	"forge.capytal.company/loreddev/x/groute/middleware"
+	"forge.capytal.company/loreddev/x/smalltrip/middleware"
 )
 
 func Middleware(options ...MiddlewareOption) middleware.Middleware {
