@@ -141,9 +141,24 @@ func NewMiddleware(handler HandlerFunc) middleware.Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			r = r.WithContext(context.WithValue(r.Context(), handlerFuncCtxKey, handler))
-			next.ServeHTTP(w, r)
+
+			mw := &middlewareReponseWriter{w, false}
+
+			next.ServeHTTP(mw, r)
 		})
 	}
+}
+
+type middlewareReponseWriter struct {
+	http.ResponseWriter
+	done bool
+}
+
+func (w *middlewareReponseWriter) WriteHeader(s int) {
+	if !w.done {
+		w.ResponseWriter.WriteHeader(s)
+	}
+	w.done = true
 }
 
 const handlerFuncCtxKey = "xx-smalltrip-Exception-handler-func"
