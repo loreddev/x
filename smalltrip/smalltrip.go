@@ -192,7 +192,7 @@ func (r *router) handleRoute(route Route) {
 	for _, m := range r.middlewares {
 		log.Debug("Wrapping route handler with middleware", slog.Any("middleware", m))
 
-		handler = m(route)
+		handler = m(handler)
 	}
 
 	method, host, p := parsePattern(route.String())
