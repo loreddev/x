@@ -82,11 +82,31 @@ func PanicMiddleware() middleware.Middleware {
 }
 
 var defaultTemplate = template.Must(template.New("xx-small-trip-default-Exception-template").Parse(`
-Status: {{ .Status }}
-Code: {{ .Code }}
-Message: {{ .Message }}
-Err: {{ .Err }}
-Severity: {{ .Severity }}
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Smalltrip Exception</title>
+	</head>
+	<body>
+		<p>Exception:</p>
+		<ul>
+			<li>Status: {{ .Status }}</li>
+			<li>Code: {{ .Code }}</li>
+			<li>Message: {{ .Message }}</li>
+			<li>Err: {{ .Err }}</li>
+			<li>Severity: {{ .Severity }}</li>
+			{{if .Data -}}
+				<li>Data:
+					<ul>
+						{{range $k, $v := .Data -}}
+							<li>{{$k | printf "%s"}}: {{$v | printf "%+v"}}</li>
+						{{- end}}
+					</ul>
+				</li>
+			{{- end}}
+		</ul>
+	</body>
+<html>
 `))
 
 type MiddlewareOption = func(*middlewareOpts)
