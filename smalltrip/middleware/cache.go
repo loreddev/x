@@ -163,10 +163,10 @@ func (d directives) String() string {
 	ds := []string{}
 
 	if d.maxAge != nil {
-		ds = append(ds, fmt.Sprintf("max-age=%d", d.maxAge.Seconds()))
+		ds = append(ds, fmt.Sprintf("max-age=%d", int(d.maxAge.Seconds())))
 	}
 	if d.sMaxage != nil {
-		ds = append(ds, fmt.Sprintf("s-maxage=%d", d.sMaxage.Seconds()))
+		ds = append(ds, fmt.Sprintf("s-maxage=%d", int(d.sMaxage.Seconds())))
 	}
 
 	if d.noCache != nil && *d.noCache {
@@ -200,10 +200,10 @@ func (d directives) String() string {
 	}
 
 	if d.staleWhileRevalidate != nil {
-		ds = append(ds, fmt.Sprintf("stale-while-revalidate=%d", d.staleWhileRevalidate.Seconds()))
+		ds = append(ds, fmt.Sprintf("stale-while-revalidate=%d", int(d.staleWhileRevalidate.Seconds())))
 	}
 	if d.staleIfError != nil {
-		ds = append(ds, fmt.Sprintf("stale-if-error=%d", d.staleIfError.Seconds()))
+		ds = append(ds, fmt.Sprintf("stale-if-error=%d", int(d.staleIfError.Seconds())))
 	}
 
 	return strings.Join(ds, ", ")
