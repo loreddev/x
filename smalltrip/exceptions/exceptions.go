@@ -61,6 +61,7 @@ func (e Exception) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	handler, ok := r.Context().Value(handlerFuncCtxKey).(HandlerFunc)
 	if !ok {
 		e.handler(e, w, r)
+		return
 	}
 
 	handler(e, w, r)
