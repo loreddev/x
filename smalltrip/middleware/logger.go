@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"log/slog"
 	"math/rand"
-	"net"
 	"net/http"
 )
 
@@ -29,9 +28,6 @@ func Logger(logger *slog.Logger) Middleware {
 			lw := &loggerResponseWriter{w, 0}
 
 			addr := loggerGetAddr(r)
-			if net.ParseIP(addr) == nil {
-				addr = fmt.Sprintf("INVALID %s", addr)
-			}
 
 			log := logger.With(
 				slog.String("id", randHash(5)),
