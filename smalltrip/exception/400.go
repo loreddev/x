@@ -203,7 +203,7 @@ func MethodNotAllowed(allowed []string, opts ...Option) Exception {
 		WithStatus(http.StatusMethodNotAllowed),
 		WithCode("Method Not Allowed"),
 		WithMessage("The method is not allowed for this endpoints."),
-		WithError(fmt.Errorf("user agent tried to use method which is not a allowed method (%s)", a)),
+		WithError(fmt.Errorf("user agent tried to use method which is not a allowed method (allowed: %s)", a)),
 		WithSeverity(WARN),
 
 		WithHeader("Allow", a),
