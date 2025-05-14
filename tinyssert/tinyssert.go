@@ -504,25 +504,26 @@ func (e Failure) StackTrace() string {
 
 type disabledAssertions struct{}
 
-// NewDisabledAssertions creates a new implementation of Assertions that always return true, with
-// the exception of [Assertions.Fail] and [Assertions.FailNow] which returns false, and
-// [Assertions.CallerInfo] which returns the actual caller info (uses [CallerInfo] underlying).
-// It is useful it you use  assertions in production and want to disable them without changing any code.
-func NewDisabledAssertions() Assertions {
+// NewDisabled creates a new implementation of Assertions that always a nil error and
+// never panics or marks the test as failed, with the exception of Fail, FailNow and
+// CallerInfo, which uses their corresponding [Fail], [FailNow] and [CallerInfo] top-level
+// functions.
+//
+// The `opts` argument does nothing, and is just available to make the function signature
+// equal to [New].
+func NewDisabled(opts ...Option) Assertions {
+	_ = opts
 	return &disabledAssertions{}
 }
 
-func (*disabledAssertions) OK(any, ...any) bool              { return true }
-func (*disabledAssertions) Equal(_, _ any, _ ...any) bool    { return true }
-func (*disabledAssertions) NotEqual(_, _ any, _ ...any) bool { return true }
-func (*disabledAssertions) Nil(any, ...any) bool             { return true }
-func (*disabledAssertions) NotNil(any, ...any) bool          { return true }
-func (*disabledAssertions) True(any, ...any) bool            { return true }
-func (*disabledAssertions) False(any, ...any) bool           { return true }
-func (*disabledAssertions) Zero(any, ...any) bool            { return true }
-func (*disabledAssertions) NotZero(any, ...any) bool         { return true }
-func (*disabledAssertions) Panic(func(), ...any) bool        { return true }
-func (*disabledAssertions) NotPanic(func(), ...any) bool     { return true }
-func (*disabledAssertions) Fail(string, ...any) bool         { return false }
-func (*disabledAssertions) FailNow(string, ...any) bool      { return false }
-func (*disabledAssertions) CallerInfo() []string             { return defaultAssert.CallerInfo() }
+func (*disabledAssertions) OK(any, ...any) error              { return nil }
+func (*disabledAssertions) Equal(_, _ any, _ ...any) error    { return nil }
+func (*disabledAssertions) NotEqual(_, _ any, _ ...any) error { return nil }
+func (*disabledAssertions) Nil(any, ...any) error             { return nil }
+func (*disabledAssertions) NotNil(any, ...any) error          { return nil }
+func (*disabledAssertions) True(bool, ...any) error           { return nil }
+func (*disabledAssertions) False(bool, ...any) error          { return nil }
+func (*disabledAssertions) Zero(any, ...any) error            { return nil }
+func (*disabledAssertions) NotZero(any, ...any) error         { return nil }
+func (*disabledAssertions) Panic(func(), ...any) error        { return nil }
+func (*disabledAssertions) NotPanic(func(), ...any) error     { return nil }
