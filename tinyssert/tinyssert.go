@@ -182,20 +182,35 @@ func New(opts ...Option) Assertions {
 	return a
 }
 
+// Option is used in new constructor functions (such as [New] and [NewDisabled]) to customize
+// the behaviour of the implementation.
 type Option = func(*assertions)
 
+// WithPanic sets the implementation to panic when an assertion fails. If used together with
+// [WithTest], the implementation should use [testing.T.FailNow] instead of panic.
 func WithPanic() Option {
 	return func(a *assertions) {
 		a.panic = true
 	}
 }
 
+// WithTest provides a [TestingT] implementation, such as the provided by the [testing] stadard package
+// to be used to log and mark tests as failed if possible.
+//
+// If the implementation has an Errorf method, it will be used instead of any logger provided by [WithLogger].
+//
+// If the implementation has an FailNow method, it will be used instead of panic.
 func WithTest(t TestingT) Option {
 	return func(a *assertions) {
 		a.test = t
 	}
 }
 
+// WithLogger provides an [slog.Logger] instance to be used by the [Assertions] implementation to log
+// failed assertions.
+//
+// If used together with [WithTest], the logger is not used if the [TestingT] implementation provided has
+// an Errorf method.
 func WithLogger(l *slog.Logger) Option {
 	return func(a *assertions) {
 		a.log = l
@@ -212,7 +227,7 @@ type assertions struct {
 	group string
 }
 
-// Wrapper interface around [testing.T].
+// TestingT is a wrapper interface around [testing.T].
 type TestingT interface {
 	Errorf(format string, args ...any)
 }
