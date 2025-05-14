@@ -52,6 +52,49 @@
 //	  value := "not value"
 //	  assert.Equal(expected, value) // "expected \"value\", got \"not value\"" with the call stack and returns false
 //	}
+//
+// Preferably, when using assertions inside production code or libraries, you can use
+// the assertions via dependency injection. This provides a easy way to disable
+// assertions in production (see [NewDisabled]) while being able to test an API without
+// changing it:
+//
+//	package main
+//
+//	import (
+//	  "flag"
+//	  "log/slog"
+//
+//	  "forge.capytal.company/loreddev/x/tinyssert"
+//	)
+//
+//	var debug = flag.Bool("debug", false, "Run the application in debug mode")
+//
+//	func init() {
+//	  flag.Parse()
+//	}
+//
+//	func main() {
+//	  logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
+//	  assert := tinyssert.NewDisabled()
+//	  if *debug {
+//	    assert := tinyssert.New(tinyssert.WithLogger(logger))
+//	  }
+//
+//	  app := App{logger: logger, assert: assert}
+//
+//	  app.Start()
+//	}
+//
+//	type App struct {
+//	  logger: *slog.Logger
+//	  assert: tinyssert.Assertions
+//	}
+//
+//	function (app *App) Start() {
+//	  app.assert.OK(app.logger, "Logger must be initialized before the application")
+//
+//	  // ...
+//	}
 package tinyssert
 
 import (
