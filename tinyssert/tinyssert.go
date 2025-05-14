@@ -527,3 +527,101 @@ func (*disabledAssertions) Zero(any, ...any) error            { return nil }
 func (*disabledAssertions) NotZero(any, ...any) error         { return nil }
 func (*disabledAssertions) Panic(func(), ...any) error        { return nil }
 func (*disabledAssertions) NotPanic(func(), ...any) error     { return nil }
+func (*disabledAssertions) Fail(f Failure)                    { Default.Fail(f) }
+func (*disabledAssertions) FailNow(f Failure)                 { Default.FailNow(f) }
+func (*disabledAssertions) CallerInfo() []string              { return Default.CallerInfo() }
+
+var (
+	// DefaultLogger is the default [slog.Logger] used by [Default]
+	DefaultLogger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
+
+	// Default implementation of [Assertions] used by the top-level API functions.
+	Default = New(WithLogger(DefaultLogger))
+)
+
+// OK asserts that the value is not zero-valued, is nil, or panics, aka. "is ok".
+//
+// Logs the failure message with [DefaultLogger].
+func OK(obj any, msg ...any) error {
+	return Default.OK(obj, msg...)
+}
+
+// Equal asserts that the actual value is equal to the expected value.
+//
+// Logs the failure message with [DefaultLogger].
+func Equal(expected, actual any, msg ...any) error {
+	return Default.Equal(expected, actual, msg...)
+}
+
+// NotEqual asserts that the actual value is not equal to the expected value.
+//
+// Logs the failure message with [DefaultLogger].
+func NotEqual(notExpected, actual any, msg ...any) error {
+	return Default.NotEqual(notExpected, actual, msg...)
+}
+
+// Nil asserts that the value is nil.
+//
+// Logs the failure message with [DefaultLogger].
+func Nil(v any, msg ...any) error {
+	return Default.Nil(v, msg...)
+}
+
+// NotNil asserts that the value is not nil.
+//
+// Logs the failure message with [DefaultLogger].
+func NotNil(v any, msg ...any) error {
+	return Default.NotNil(v, msg...)
+}
+
+// True asserts that the value is a boolean true.
+//
+// Logs the failure message with [DefaultLogger].
+func True(v bool, msg ...any) error {
+	return Default.True(v, msg...)
+}
+
+// False asserts that the value is a boolean false.
+//
+// Logs the failure message with [DefaultLogger].
+func False(v bool, msg ...any) error {
+	return Default.False(v, msg...)
+}
+
+// Zero asserts that the value is zero-valued.
+//
+// Logs the failure message with [DefaultLogger].
+func Zero(v any, msg ...any) error {
+	return Default.Zero(v, msg...)
+}
+
+// NotZero asserts that the value is not zero-valued.
+//
+// Logs the failure message with [DefaultLogger].
+func NotZero(v any, msg ...any) error {
+	return Default.NotZero(v, msg...)
+}
+
+// Panic asserts that the function panics.
+//
+// Logs the failure message with [DefaultLogger].
+func Panic(fn func(), msg ...any) error {
+	return Default.Panic(fn, msg...)
+}
+
+// NotPanic asserts that the function does not panics.
+//
+// Logs the failure message with [DefaultLogger].
+func NotPanic(fn func(), msg ...any) error {
+	return Default.NotPanic(fn, msg...)
+}
+
+// Fail logs the formatted failure message using [DefaultLogger].
+func Fail(f Failure) {
+	Default.Fail(f)
+}
+
+// FailNow panics with the formatted failure message.
+func FailNow(f Failure) {
+	Default.FailNow(f)
+}
