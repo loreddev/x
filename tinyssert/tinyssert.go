@@ -71,6 +71,14 @@ import (
 // of this interface can have extra logic on their state such as panicking or using
 // [testing.T.FailNow] to halt the program from continuing on failed assertions instead
 // of just return false.
+//
+// `msg` argument(s) is(/are) optional, the first argument should always be a string.
+// The string can have formatting verbs, with the remaining arguments being used to fill
+// those verbs. So for example:
+//
+//	 if argument > 0 {
+//		  tinyssert.OK(value, "Since %d is greater than 0, this should always be ok", argument)
+//	 }
 type Assertions interface {
 	// Asserts that the object are not zero-valued or nil, aka. "are ok".
 	OK(obj any, msg ...any) bool
