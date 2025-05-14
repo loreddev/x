@@ -13,10 +13,8 @@
 //
 // An original copy of this file can be found at http://forge.capytal.company/loreddev/x/tinyssert/tinyssert.go.
 
-// # Tiny Assert
-//
-// Minimal set of assertions functions for testing and simulation testing, all in
-// one file.
+// Package tinyssert is a minimal set of assertions functions for testing and simulation
+// testing, all in one file.
 //
 // The most simple way of using the package is importing it directly and using the
 // alias functions:
