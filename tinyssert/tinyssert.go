@@ -160,6 +160,8 @@ type Assertions interface {
 	CallerInfo() []string
 }
 
+// New constructs a new implementation of [Assertions]. Use `opts` to customize the behaviour
+// of the implementation.
 func New(opts ...Option) Assertions {
 	a := &assertions{
 		panic: false,
