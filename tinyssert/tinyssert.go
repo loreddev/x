@@ -34,8 +34,8 @@
 //	  log.Println(tinyssert.Equal(expected, value)) // "true"
 //	}
 //
-// Or proverbially, you can create your own "assert" variable and have more control
-// over how asserts work, see [NewAssertions] for more information:
+// You can create your own "assert" variable and have more control
+// over how asserts work, see the [New] constructor for more information:
 //
 //	package main
 //
@@ -45,7 +45,7 @@
 //	)
 //
 //	var logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
-//	var assert = tinyssert.NewAssertions(assert.Opts{Logger: logger})
+//	var assert = tinyssert.NewAssertions(tinyssert.WithLogger(logger))
 //
 //	func main() {
 //	  expected := "value"
@@ -80,154 +80,93 @@ import (
 //		  tinyssert.OK(value, "Since %d is greater than 0, this should always be ok", argument)
 //	 }
 type Assertions interface {
-	// Asserts that the object are not zero-valued or nil, aka. "are ok".
-	OK(obj any, msg ...any) bool
+	// Asserts that the value is not zero-valued, is nil, or panics, aka. "is ok".
+	OK(v any, msg ...any) error
 
 	// Asserts that the actual value is equal to the expected value.
-	Equal(expected, actual any, msg ...any) bool
+	Equal(expected, actual any, msg ...any) error
 	// Asserts that the actual value is not equal to the expected value.
-	NotEqual(expected, actual any, msg ...any) bool
+	NotEqual(notExpected, actual any, msg ...any) error
 
-	// Asserts that the object is nil.
-	Nil(obj any, msg ...any) bool
-	// Asserts that the object is not nil.
-	NotNil(obj any, msg ...any) bool
+	// Asserts that the value is nil.
+	Nil(v any, msg ...any) error
+	// Asserts that the value is not nil.
+	NotNil(v any, msg ...any) error
 
-	// Asserts that the object is a boolean true.
-	True(obj any, msg ...any) bool
-	// Asserts that the object is a boolean false.
-	False(obj any, msg ...any) bool
+	// Asserts that the value is a boolean true.
+	True(b bool, msg ...any) error
+	// Asserts that the value is a boolean false.
+	False(b bool, msg ...any) error
 
-	// Asserts that the object is zero-valued.
-	Zero(obj any, msg ...any) bool
-	// Asserts that the object is not zero-valued.
-	NotZero(obj any, msg ...any) bool
+	// Asserts that the value is zero-valued.
+	Zero(v any, msg ...any) error
+	// Asserts that the value is not zero-valued.
+	NotZero(v any, msg ...any) error
 
 	// Asserts that the function panics.
-	Panic(fn func(), msg ...any) bool
+	Panic(fn func(), msg ...any) error
 	// Asserts that the function does not panics.
-	NotPanic(fn func(), msg ...any) bool
+	NotPanic(fn func(), msg ...any) error
 
-	// Returns false and marks the test as having failed, if the underlying
-	// implementation has access to a [testing.T.Fail]. Implementations can also log
-	// the call stack using [CallerInfo].
-	Fail(failureMsg string, msg ...any) bool
-	// Returns false, marks the test as having failed, and calls [testing.T.FailNow] if the
-	// underlying implementation has access to it, otherwise, simply panics.
-	// Implementations can also log the call stack using [CallerInfo].
-	FailNow(failureMsg string, msg ...any) bool
+	// Logs the formatted failure message and/or marks the test as failed if possible,
+	// depending of what is possible to the implementation.
+	Fail(f Failure)
+	// Panics with the formatted failure message and/or marks the test as failed,
+	// depending of what is possible to the implementation.
+	FailNow(f Failure)
 
 	// Gets the caller stack.
 	CallerInfo() []string
 }
 
-var defaultAssert = NewAssertions()
+func New(opts ...Option) Assertions {
+	a := &assertions{
+		panic: false,
+		log:   slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{})),
 
-// Asserts that the object are not zero-valued or nil, aka. "are ok".
-func OK(obj any, msg ...any) bool {
-	return defaultAssert.OK(obj, msg...)
-}
-
-// Asserts that the actual value is equal to the expected value.
-func Equal(expected, actual any, msg ...any) bool {
-	return defaultAssert.Equal(expected, actual, msg...)
-}
-
-// Asserts that the actual value is not equal to the expected value.
-func NotEqual(expected, actual any, msg ...any) bool {
-	return defaultAssert.NotEqual(expected, actual, msg...)
-}
-
-// Asserts that the object is nil.
-func Nil(obj any, msg ...any) bool {
-	return defaultAssert.Nil(obj, msg...)
-}
-
-// Asserts that the object is not nil.
-func NotNil(obj any, msg ...any) bool {
-	return defaultAssert.NotNil(obj, msg...)
-}
-
-// Asserts that the object is a boolean true.
-func True(obj any, msg ...any) bool {
-	return defaultAssert.True(obj, msg...)
-}
-
-// Asserts that the object is a boolean false.
-func False(obj any, msg ...any) bool {
-	return defaultAssert.False(obj, msg...)
-}
-
-// Asserts that the object is zero-valued.
-func Zero(obj any, msg ...any) bool {
-	return defaultAssert.Zero(obj, msg...)
-}
-
-// Asserts that the object is not zero-valued.
-func NotZero(obj any, msg ...any) bool {
-	return defaultAssert.NotZero(obj, msg...)
-}
-
-// Asserts that the function panics.
-func Panic(fn func(), msg ...any) bool {
-	return defaultAssert.Panic(fn, msg...)
-}
-
-// Asserts that the function does not panics.
-func NotPanic(fn func(), msg ...any) bool {
-	return defaultAssert.NotPanic(fn, msg...)
-}
-
-// Returns false and logs the failure message using [slog.TextHandler] to [os.Stdout].
-func Fail(failureMsg string, msg ...any) bool {
-	return NewAssertions(
-		Opts{Logger: slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))},
-	).Fail(failureMsg, msg...)
-}
-
-// Panics and logs the failure message using [slog.TextHandler] to [os.Stdout].
-func FailNow(failureMsg string, msg ...any) bool {
-	return defaultAssert.FailNow(failureMsg, msg...)
-}
-
-// Creates a new implementation of Assertions, use [Opts] if you want to better manipulate
-// the behaviour of assertions.
-func NewAssertions(opts ...Opts) Assertions {
-	opt := Opts{}
-	if len(opts) > 0 {
-		opt = opts[0]
+		test:   nil,
+		helper: nil,
 	}
 
-	var h helperT
-	if th, ok := opt.Testing.(helperT); ok {
-		h = th
+	for _, opt := range opts {
+		opt(a)
 	}
 
-	if opt.Logger == nil {
-		opt.Logger = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
+	if th, ok := a.test.(helperT); ok {
+		a.helper = th
 	}
 
-	return &assertions{
-		panic: opt.Panic,
+	return a
+}
 
-		t: opt.Testing,
-		h: h,
+type Option = func(*assertions)
 
-		log: opt.Logger,
+func WithPanic() Option {
+	return func(a *assertions) {
+		a.panic = true
 	}
 }
 
-type Opts struct {
-	// Wherever the assertions should panic/[FailNow] instead of just logging and
-	// marking the test as failed. Optional, defaults to false.
-	Panic bool
-	// The testing framework to be used by assertions. Optional, if none is provided
-	// the assertions just returns false in the functions, if [Opts.Panic] is set to true, the
-	// assertions use panic() instead of [FailNow].
-	Testing TestingT
-	// The logger used by the assertions if none Testing framework is provided. Optional,
-	// creates a logger that writes to [io.Discard] if none is provided.
-	Logger *slog.Logger
+func WithTest(t TestingT) Option {
+	return func(a *assertions) {
+		a.test = t
+	}
+}
+
+func WithLogger(l *slog.Logger) Option {
+	return func(a *assertions) {
+		a.log = l
+	}
+}
+
+type assertions struct {
+	panic bool
+
+	test   TestingT
+	helper helperT
+
+	log   *slog.Logger
+	group string
 }
 
 // Wrapper interface around [testing.T].
@@ -238,145 +177,143 @@ type helperT interface {
 	Helper()
 }
 
-type assertions struct {
-	panic bool
+var _ Assertions = (*assertions)(nil)
 
-	t TestingT
-	h helperT
-
-	log *slog.Logger
+func (a *assertions) Equal(expected, actual any, msg ...any) error {
+	if a.equal(expected, actual) {
+		return nil
+	}
+	return a.fail(fmt.Sprintf("expected %v (right), got %v (left)", expected, actual), msg...)
 }
 
-func (as *assertions) OK(obj any, msg ...any) bool {
-	switch {
-	case as.nil(obj):
-		return as.failOrPanic("unexpected nil value", msg...)
-	case as.zero(obj):
-		return as.failOrPanic("unexpected zero value", msg...)
-	default:
+func (a *assertions) NotEqual(notExpected, actual any, msg ...any) error {
+	if !a.equal(notExpected, actual) {
+		return nil
+	}
+	return a.fail(fmt.Sprintf("expected to %v (right) and %v (left) to be not-equal", notExpected, actual), msg...)
+}
+
+func (a *assertions) equal(ex, ac any) bool {
+	if nex, nac := a.OK(ex), a.OK(ac); (nex != nil) != (nac != nil) {
 		return false
 	}
-}
 
-func (as *assertions) Equal(e, a any, msg ...any) bool {
-	if as.equal(e, a) {
-		return true
-	}
-	return as.failOrPanic(fmt.Sprintf("expected %v, got %v", e, a), msg...)
-}
-
-func (as *assertions) NotEqual(e, a any, msg ...any) bool {
-	if !as.equal(e, a) {
-		return true
-	}
-	return as.failOrPanic(fmt.Sprintf("not expected %v, got %v", e, a), msg...)
-}
-
-func (as *assertions) equal(e, a any) bool {
-	if an, en := as.nil(a), as.nil(e); an || en {
-		if (an && !en) || (!an && en) {
-			return false
-		}
-		return en == an
-	}
-
-	if reflect.DeepEqual(e, a) {
+	if reflect.DeepEqual(ex, ac) {
 		return true
 	}
 
-	ev, av := reflect.ValueOf(e), reflect.ValueOf(a)
+	ev, av := reflect.ValueOf(ex), reflect.ValueOf(ac)
 
 	if ev == av {
 		return true
 	}
 
 	if av.Type().ConvertibleTo(ev.Type()) {
-		return reflect.DeepEqual(e, av.Convert(ev.Type()).Interface())
+		return reflect.DeepEqual(ex, av.Convert(ev.Type()).Interface())
 	}
 
-	if fmt.Sprintf("%#v", e) == fmt.Sprintf("%#v", a) {
+	if fmt.Sprintf("%#v", ex) == fmt.Sprintf("%#v", ac) {
 		return true
 	}
 
 	return false
 }
 
-func (as *assertions) Nil(obj any, msg ...any) bool {
-	if as.nil(obj) {
-		return true
+func (a *assertions) OK(v any, msg ...any) error {
+	if a.nil(v) {
+		return a.fail("expected not-nil value", msg...)
 	}
-	return as.failOrPanic("expected nil value", msg...)
+	if a.zero(v) {
+		return a.fail("expected non-zero value", msg...)
+	}
+
+	if f, ok := v.(func()); ok {
+		if a.panics(f) {
+			return a.fail("expected to not panic")
+		}
+	}
+
+	return nil
 }
 
-func (as *assertions) NotNil(obj any, msg ...any) bool {
-	if !as.nil(obj) {
-		return true
+func (a *assertions) Nil(v any, msg ...any) error {
+	if a.nil(v) {
+		return nil
 	}
-	return as.failOrPanic("expected not-nil value", msg...)
+	return a.fail("expected nil value", msg...)
 }
 
-func (as *assertions) nil(obj any) bool {
-	if obj == nil {
+func (a *assertions) NotNil(v any, msg ...any) error {
+	if !a.nil(v) {
+		return nil
+	}
+	return a.fail("expected not-nil value", msg...)
+}
+
+func (a *assertions) nil(v any) bool {
+	if v == nil {
 		return true
 	}
-	v := reflect.ValueOf(obj)
-	k := v.Kind()
-	if k >= reflect.Chan && k <= reflect.Slice && v.IsNil() {
+
+	rv := reflect.ValueOf(v)
+	rk := rv.Kind()
+	if rk >= reflect.Chan && rk <= reflect.Slice && rv.IsNil() {
 		return true
 	}
+
 	return false
 }
 
-func (as *assertions) True(obj any, msg ...any) bool {
-	if b, ok := obj.(bool); ok && b {
-		return true
+func (a *assertions) True(v bool, msg ...any) error {
+	if v {
+		return nil
 	}
-	return as.failOrPanic("expected true", msg...)
+	return a.fail("expected true", msg...)
 }
 
-func (as *assertions) False(obj any, msg ...any) bool {
-	if b, ok := obj.(bool); ok && !b {
-		return true
+func (a *assertions) False(v bool, msg ...any) error {
+	if !v {
+		return nil
 	}
-	return as.failOrPanic("expected false", msg...)
+	return a.fail("expected false", msg...)
 }
 
-func (as *assertions) Zero(obj any, msg ...any) bool {
-	if as.zero(obj) {
-		return true
+func (a *assertions) Zero(v any, msg ...any) error {
+	if a.zero(v) {
+		return nil
 	}
-	return as.failOrPanic(fmt.Sprintf("expected zero value, got %v", obj), msg...)
+	return a.fail("expected zero value", msg...)
 }
 
-func (as *assertions) NotZero(obj any, msg ...any) bool {
-	if !as.zero(obj) {
-		return true
+func (a *assertions) NotZero(v any, msg ...any) error {
+	if !a.zero(v) {
+		return nil
 	}
-	return as.failOrPanic(fmt.Sprintf("expected non-zero value, got %v", obj), msg...)
+	return a.fail("expected non-zero value", msg...)
 }
 
-func (as *assertions) zero(obj any) bool {
-	if obj != nil && !reflect.DeepEqual(obj, reflect.Zero(reflect.TypeOf(obj)).Interface()) {
+func (a *assertions) zero(v any) bool {
+	if v != nil && !reflect.DeepEqual(v, reflect.Zero(reflect.TypeOf(v)).Interface()) {
 		return false
 	}
 	return true
 }
 
-func (as *assertions) Panic(fn func(), msg ...any) bool {
-	if as.panics(fn) {
-		return true
+func (a *assertions) Panic(fn func(), msg ...any) error {
+	if a.panics(fn) {
+		return nil
 	}
-	return as.failOrPanic("expected panic", msg...)
+	return a.fail("expected function to panic", msg...)
 }
 
-func (as *assertions) NotPanic(fn func(), msg ...any) bool {
-	if !as.panics(fn) {
-		return true
+func (a *assertions) NotPanic(fn func(), msg ...any) error {
+	if !a.panics(fn) {
+		return nil
 	}
-	return as.failOrPanic("unexpected panic", msg...)
+	return a.fail("expected function to not panic", msg...)
 }
 
-func (as *assertions) panics(fn func()) bool {
+func (a *assertions) panics(fn func()) bool {
 	var r any
 	func() {
 		defer func() {
@@ -387,80 +324,68 @@ func (as *assertions) panics(fn func()) bool {
 	return r != nil
 }
 
-func (as *assertions) Fail(failureMsg string, msg ...any) bool {
-	as.fail(failureMsg, msg...)
-	if ft, ok := as.t.(interface {
-		Fail()
-	}); ok {
-		ft.Fail()
+func (a *assertions) fail(reason string, msg ...any) error {
+	if a.helper != nil {
+		a.helper.Helper()
 	}
-	return false
-}
 
-func (as *assertions) FailNow(failureMsg string, msg ...any) bool {
-	as.fail(failureMsg, msg...)
-	if ft, ok := as.t.(interface {
-		FailNow()
-	}); ok {
-		ft.FailNow()
-	} else {
-		panic(fmtMessage(msg))
+	f := Failure{
+		Reason:     reason,
+		Message:    fmtMessage(msg),
+		CallerInfo: a.CallerInfo(),
 	}
-	return false
-}
 
-func (as *assertions) fail(failureMsg string, msg ...any) {
-	if as.h != nil {
-		as.h.Helper()
-	}
-	content := make(map[string]string, 4)
-
-	content["Stack Trace"] = strings.Join(as.CallerInfo(), "\n\t")
-	content["Error"] = failureMsg
-
-	if n, ok := as.t.(interface {
+	if n, ok := a.test.(interface {
 		Name() string
 	}); ok {
-		content["Test"] = n.Name()
+		f.Test = n.Name()
 	}
 
-	if msg := fmtMessage(msg); msg != "" {
-		content["Message"] = msg
-	}
-
-	var out string
-	for k, m := range content {
-		var c string
-		for _, s := range strings.Split(m, "\n") {
-			c += fmt.Sprintf("\t%s\n", s)
-		}
-		out += fmt.Sprintf("\t%s:\n%s", k, c)
-	}
-
-	if as.t != nil {
-		as.t.Errorf("\n%s", out)
+	if a.panic {
+		a.FailNow(f)
 	} else {
-		as.log.Error(out)
+		a.Fail(f)
+	}
+
+	return f
+}
+
+func (a *assertions) Fail(f Failure) {
+	if ft, ok := a.test.(interface {
+		Fail()
+	}); ok {
+		a.test.Errorf("ASSERTION FAILED:\n%s", f.String())
+		ft.Fail()
+	} else {
+		a.log.Error("ASSERTION FAILED",
+			slog.String("reason", f.Reason),
+			slog.String("message", f.Message),
+			slog.String("test", f.Test),
+			slog.Any("caller", f.CallerInfo),
+		)
 	}
 }
 
-func (as *assertions) failOrPanic(failureMsg string, msg ...any) bool {
-	if as.panic {
-		return as.FailNow(failureMsg, msg...)
+func (a *assertions) FailNow(f Failure) {
+	if ft, ok := a.test.(interface {
+		FailNow()
+	}); ok {
+		a.test.Errorf("ASSERTION FAILED:\n%s", f.String())
+		ft.FailNow()
+	} else {
+		panic(f.String())
 	}
-	return as.Fail(failureMsg, msg...)
 }
 
-func fmtMessage(msg []any) string {
+func fmtMessage(msg ...any) string {
 	switch len(msg) {
 	case 0:
 		return ""
 	case 1:
 		if s, ok := msg[0].(string); ok {
 			return s
-		} else {
-			return fmt.Sprintf("%v", msg[0])
 		}
+		return fmt.Sprintf("%v", msg[0])
 	default:
 		var m string
 		if s, ok := msg[0].(string); ok {
@@ -523,6 +448,58 @@ func isTest(name, prefix string) bool {
 	}
 	r, _ := utf8.DecodeRuneInString(name[len(prefix):])
 	return !unicode.IsLower(r)
+}
+
+type Failure struct {
+	Reason  string
+	Message string
+
+	Test       string
+	CallerInfo []string
+}
+
+var (
+	_ error        = Failure{}
+	_ fmt.Stringer = Failure{}
+)
+
+func (e Failure) Error() string {
+	if e.Message != "" {
+		return fmt.Sprintf("assertion failed, %s: %s", e.Reason, e.Message)
+	}
+	return fmt.Sprintf("assertion failed, %s", e.Reason)
+}
+
+func (e Failure) String() string {
+	c := map[string]string{
+		"Reason": e.Reason,
+	}
+
+	if e.Message != "" {
+		c["Message"] = e.Message
+	}
+
+	if e.Test != "" {
+		c["Test"] = e.Test
+	}
+
+	c["Stack Trace"] = e.StackTrace()
+
+	var out string
+	for k, m := range c {
+		var s string
+		for _, l := range strings.Split(m, "\n") {
+			s += fmt.Sprintf("\t%s\n", l)
+		}
+		out += fmt.Sprintf("\t%s:\n%s", k, s)
+	}
+
+	return out
+}
+
+// StackTrace returns the CallerInfo strings as a formatted stack trace.
+func (e Failure) StackTrace() string {
+	return strings.Join(e.CallerInfo, "\n\t")
 }
 
 type disabledAssertions struct{}
