@@ -17,18 +17,11 @@ package smalltrip
 
 import (
 	"log/slog"
-	"net/http"
 
-	"forge.capytal.company/loreddev/x/tinyssert"
+	"forge.capytal.company/loreddev/x/smalltrip/middleware"
 )
 
 type Option func(*router)
-
-func WithAssertions(assertions tinyssert.Assertions) Option {
-	return func(r *router) {
-		r.assert = assertions
-	}
-}
 
 func WithLogger(logger *slog.Logger) Option {
 	return func(r *router) {
@@ -36,8 +29,12 @@ func WithLogger(logger *slog.Logger) Option {
 	}
 }
 
-func WithServeMux(mux *http.ServeMux) Option {
 	return func(r *router) {
-		r.mux = mux
+	}
+}
+
+func WithMiddleware(m middleware.Middleware) Option {
+	return func(r *router) {
+		r.Use(m)
 	}
 }
