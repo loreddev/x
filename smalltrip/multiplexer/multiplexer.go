@@ -13,31 +13,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package smalltrip
+package multiplexer
 
-import (
-	"log/slog"
+import "net/http"
 
-	"forge.capytal.company/loreddev/x/smalltrip/middleware"
-	"forge.capytal.company/loreddev/x/smalltrip/multiplexer"
-)
-
-type Option func(*router)
-
-func WithLogger(logger *slog.Logger) Option {
-	return func(r *router) {
-		r.log = logger
-	}
-}
-
-func WithMultiplexer(mux multiplexer.Multiplexer) Option {
-	return func(r *router) {
-		r.mux = mux
-	}
-}
-
-func WithMiddleware(m middleware.Middleware) Option {
-	return func(r *router) {
-		r.Use(m)
-	}
+type Multiplexer interface {
+	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
+	Handle(pattern string, handler http.Handler)
+	Handler(r *http.Request) (h http.Handler, pattern string)
+	http.Handler
 }

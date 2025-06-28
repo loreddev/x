@@ -16,27 +16,22 @@
 package smalltrip
 
 import (
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
-	"path"
-	"strings"
 
 	"forge.capytal.company/loreddev/x/smalltrip/middleware"
-	"forge.capytal.company/loreddev/x/tinyssert"
+	"forge.capytal.company/loreddev/x/smalltrip/multiplexer"
 )
 
 type Router interface {
-	Handle(pattern string, handler http.Handler)
-	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
-
-	Use(middleware middleware.Middleware)
-
-	http.Handler
+	multiplexer.Multiplexer
+	Use(middleware.Middleware)
 }
 
 type router struct {
-	mux         *http.ServeMux
+	mux multiplexer.Multiplexer
 	mws []middleware.Middleware
 	log *slog.Logger
 }
