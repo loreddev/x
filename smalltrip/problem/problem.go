@@ -3,6 +3,7 @@ package problem
 import (
 	"encoding/xml"
 	"fmt"
+	"net/http"
 	"slices"
 )
 
@@ -41,6 +42,10 @@ func NewDetailed(s int, detail string, opts ...Option) Problem {
 
 func (p Problem) StatusCode() int {
 	return p.Status
+}
+
+func (p Problem) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	p.handler(p).ServeHTTP(w, r)
 }
 
 func WithType(t string) Option {
