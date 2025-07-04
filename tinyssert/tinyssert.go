@@ -122,32 +122,32 @@ import (
 //	 }
 type Assertions interface {
 	// Asserts that the value is not zero-valued, is nil, or panics, aka. "is ok".
-	OK(v any, msg ...any) error
+	OK(v any, msg ...any) Failure
 
 	// Asserts that the actual value is equal to the expected value.
-	Equal(expected, actual any, msg ...any) error
+	Equal(expected, actual any, msg ...any) Failure
 	// Asserts that the actual value is not equal to the expected value.
-	NotEqual(notExpected, actual any, msg ...any) error
+	NotEqual(notExpected, actual any, msg ...any) Failure
 
 	// Asserts that the value is nil.
-	Nil(v any, msg ...any) error
+	Nil(v any, msg ...any) Failure
 	// Asserts that the value is not nil.
-	NotNil(v any, msg ...any) error
+	NotNil(v any, msg ...any) Failure
 
 	// Asserts that the value is a boolean true.
-	True(b bool, msg ...any) error
+	True(b bool, msg ...any) Failure
 	// Asserts that the value is a boolean false.
-	False(b bool, msg ...any) error
+	False(b bool, msg ...any) Failure
 
 	// Asserts that the value is zero-valued.
-	Zero(v any, msg ...any) error
+	Zero(v any, msg ...any) Failure
 	// Asserts that the value is not zero-valued.
-	NotZero(v any, msg ...any) error
+	NotZero(v any, msg ...any) Failure
 
 	// Asserts that the function panics.
-	Panic(fn func(), msg ...any) error
+	Panic(fn func(), msg ...any) Failure
 	// Asserts that the function does not panics.
-	NotPanic(fn func(), msg ...any) error
+	NotPanic(fn func(), msg ...any) Failure
 
 	// Logs the formatted failure message and/or marks the test as failed if possible,
 	// depending of what is possible to the implementation.
@@ -237,14 +237,14 @@ type helperT interface {
 
 var _ Assertions = (*assertions)(nil)
 
-func (a *assertions) Equal(expected, actual any, msg ...any) error {
+func (a *assertions) Equal(expected, actual any, msg ...any) Failure {
 	if a.equal(expected, actual) {
 		return nil
 	}
 	return a.fail(fmt.Sprintf("expected %v (right), got %v (left)", expected, actual), msg...)
 }
 
-func (a *assertions) NotEqual(notExpected, actual any, msg ...any) error {
+func (a *assertions) NotEqual(notExpected, actual any, msg ...any) Failure {
 	if !a.equal(notExpected, actual) {
 		return nil
 	}
@@ -277,7 +277,7 @@ func (a *assertions) equal(ex, ac any) bool {
 	return false
 }
 
-func (a *assertions) OK(v any, msg ...any) error {
+func (a *assertions) OK(v any, msg ...any) Failure {
 	if a.nil(v) {
 		return a.fail("expected not-nil value", msg...)
 	}
@@ -294,14 +294,14 @@ func (a *assertions) OK(v any, msg ...any) error {
 	return nil
 }
 
-func (a *assertions) Nil(v any, msg ...any) error {
+func (a *assertions) Nil(v any, msg ...any) Failure {
 	if a.nil(v) {
 		return nil
 	}
 	return a.fail("expected nil value", msg...)
 }
 
-func (a *assertions) NotNil(v any, msg ...any) error {
+func (a *assertions) NotNil(v any, msg ...any) Failure {
 	if !a.nil(v) {
 		return nil
 	}
@@ -322,28 +322,28 @@ func (a *assertions) nil(v any) bool {
 	return false
 }
 
-func (a *assertions) True(v bool, msg ...any) error {
+func (a *assertions) True(v bool, msg ...any) Failure {
 	if v {
 		return nil
 	}
 	return a.fail("expected true", msg...)
 }
 
-func (a *assertions) False(v bool, msg ...any) error {
+func (a *assertions) False(v bool, msg ...any) Failure {
 	if !v {
 		return nil
 	}
 	return a.fail("expected false", msg...)
 }
 
-func (a *assertions) Zero(v any, msg ...any) error {
+func (a *assertions) Zero(v any, msg ...any) Failure {
 	if a.zero(v) {
 		return nil
 	}
 	return a.fail("expected zero value", msg...)
 }
 
-func (a *assertions) NotZero(v any, msg ...any) error {
+func (a *assertions) NotZero(v any, msg ...any) Failure {
 	if !a.zero(v) {
 		return nil
 	}
@@ -357,14 +357,14 @@ func (a *assertions) zero(v any) bool {
 	return true
 }
 
-func (a *assertions) Panic(fn func(), msg ...any) error {
+func (a *assertions) Panic(fn func(), msg ...any) Failure {
 	if a.panics(fn) {
 		return nil
 	}
 	return a.fail("expected function to panic", msg...)
 }
 
-func (a *assertions) NotPanic(fn func(), msg ...any) error {
+func (a *assertions) NotPanic(fn func(), msg ...any) Failure {
 	if !a.panics(fn) {
 		return nil
 	}
@@ -382,21 +382,21 @@ func (a *assertions) panics(fn func()) bool {
 	return r != nil
 }
 
-func (a *assertions) fail(reason string, msg ...any) error {
+func (a *assertions) fail(reason string, msg ...any) Failure {
 	if a.helper != nil {
 		a.helper.Helper()
 	}
 
-	f := Failure{
-		Reason:     reason,
-		Message:    fmtMessage(msg),
-		CallerInfo: a.CallerInfo(),
+	f := failure{
+		reason:     reason,
+		message:    fmtMessage(msg),
+		callerInfo: a.CallerInfo(),
 	}
 
 	if n, ok := a.test.(interface {
 		Name() string
 	}); ok {
-		f.Test = n.Name()
+		f.test = n.Name()
 	}
 
 	if a.panic {
@@ -416,10 +416,10 @@ func (a *assertions) Fail(f Failure) {
 		ft.Fail()
 	} else {
 		a.log.Error("ASSERTION FAILED",
-			slog.String("reason", f.Reason),
-			slog.String("message", f.Message),
-			slog.String("test", f.Test),
-			slog.Any("caller", f.CallerInfo),
+			slog.String("reason", f.Reason()),
+			slog.String("message", f.Message()),
+			slog.String("test", f.Test()),
+			slog.Any("caller", f.CallerInfo()),
 		)
 	}
 }
@@ -508,37 +508,42 @@ func isTest(name, prefix string) bool {
 	return !unicode.IsLower(r)
 }
 
-type Failure struct {
-	Reason  string
-	Message string
+type failure struct {
+	reason  string
+	message string
 
-	Test       string
-	CallerInfo []string
+	test       string
+	callerInfo []string
 }
 
-var (
-	_ error        = Failure{}
-	_ fmt.Stringer = Failure{}
-)
+var _ Failure = failure{}
 
-func (e Failure) Error() string {
-	if e.Message != "" {
-		return fmt.Sprintf("assertion failed, %s: %s", e.Reason, e.Message)
+func (e failure) Reason() string {
+	return e.reason
+}
+
+func (e failure) Message() string {
+	return e.message
+}
+
+func (e failure) Error() string {
+	if e.message != "" {
+		return fmt.Sprintf("assertion failed, %s: %s", e.reason, e.message)
 	}
-	return fmt.Sprintf("assertion failed, %s", e.Reason)
+	return fmt.Sprintf("assertion failed, %s", e.reason)
 }
 
-func (e Failure) String() string {
+func (e failure) String() string {
 	c := map[string]string{
-		"Reason": e.Reason,
+		"Reason": e.reason,
 	}
 
-	if e.Message != "" {
-		c["Message"] = e.Message
+	if e.message != "" {
+		c["Message"] = e.message
 	}
 
-	if e.Test != "" {
-		c["Test"] = e.Test
+	if e.test != "" {
+		c["Test"] = e.test
 	}
 
 	c["Stack Trace"] = e.StackTrace()
@@ -555,9 +560,28 @@ func (e Failure) String() string {
 	return out
 }
 
+func (e failure) Test() string {
+	return e.test
+}
+
+func (e failure) CallerInfo() []string {
+	return e.callerInfo
+}
+
 // StackTrace returns the CallerInfo strings as a formatted stack trace.
-func (e Failure) StackTrace() string {
-	return strings.Join(e.CallerInfo, "\n\t")
+func (e failure) StackTrace() string {
+	return strings.Join(e.callerInfo, "\n\t")
+}
+
+type Failure interface {
+	Reason() string
+	Message() string
+	Test() string
+	StackTrace() string
+	CallerInfo() []string
+
+	error
+	fmt.Stringer
 }
 
 type disabledAssertions struct{}
@@ -574,20 +598,20 @@ func NewDisabled(opts ...Option) Assertions {
 	return &disabledAssertions{}
 }
 
-func (*disabledAssertions) OK(any, ...any) error              { return nil }
-func (*disabledAssertions) Equal(_, _ any, _ ...any) error    { return nil }
-func (*disabledAssertions) NotEqual(_, _ any, _ ...any) error { return nil }
-func (*disabledAssertions) Nil(any, ...any) error             { return nil }
-func (*disabledAssertions) NotNil(any, ...any) error          { return nil }
-func (*disabledAssertions) True(bool, ...any) error           { return nil }
-func (*disabledAssertions) False(bool, ...any) error          { return nil }
-func (*disabledAssertions) Zero(any, ...any) error            { return nil }
-func (*disabledAssertions) NotZero(any, ...any) error         { return nil }
-func (*disabledAssertions) Panic(func(), ...any) error        { return nil }
-func (*disabledAssertions) NotPanic(func(), ...any) error     { return nil }
-func (*disabledAssertions) Fail(f Failure)                    { Default.Fail(f) }
-func (*disabledAssertions) FailNow(f Failure)                 { Default.FailNow(f) }
-func (*disabledAssertions) CallerInfo() []string              { return Default.CallerInfo() }
+func (*disabledAssertions) OK(any, ...any) Failure              { return nil }
+func (*disabledAssertions) Equal(_, _ any, _ ...any) Failure    { return nil }
+func (*disabledAssertions) NotEqual(_, _ any, _ ...any) Failure { return nil }
+func (*disabledAssertions) Nil(any, ...any) Failure             { return nil }
+func (*disabledAssertions) NotNil(any, ...any) Failure          { return nil }
+func (*disabledAssertions) True(bool, ...any) Failure           { return nil }
+func (*disabledAssertions) False(bool, ...any) Failure          { return nil }
+func (*disabledAssertions) Zero(any, ...any) Failure            { return nil }
+func (*disabledAssertions) NotZero(any, ...any) Failure         { return nil }
+func (*disabledAssertions) Panic(func(), ...any) Failure        { return nil }
+func (*disabledAssertions) NotPanic(func(), ...any) Failure     { return nil }
+func (*disabledAssertions) Fail(f Failure)                      { Default.Fail(f) }
+func (*disabledAssertions) FailNow(f Failure)                   { Default.FailNow(f) }
+func (*disabledAssertions) CallerInfo() []string                { return Default.CallerInfo() }
 
 var (
 	// DefaultLogger is the default [slog.Logger] used by [Default]
@@ -600,77 +624,77 @@ var (
 // OK asserts that the value is not zero-valued, is nil, or panics, aka. "is ok".
 //
 // Logs the failure message with [DefaultLogger].
-func OK(obj any, msg ...any) error {
+func OK(obj any, msg ...any) Failure {
 	return Default.OK(obj, msg...)
 }
 
 // Equal asserts that the actual value is equal to the expected value.
 //
 // Logs the failure message with [DefaultLogger].
-func Equal(expected, actual any, msg ...any) error {
+func Equal(expected, actual any, msg ...any) Failure {
 	return Default.Equal(expected, actual, msg...)
 }
 
 // NotEqual asserts that the actual value is not equal to the expected value.
 //
 // Logs the failure message with [DefaultLogger].
-func NotEqual(notExpected, actual any, msg ...any) error {
+func NotEqual(notExpected, actual any, msg ...any) Failure {
 	return Default.NotEqual(notExpected, actual, msg...)
 }
 
 // Nil asserts that the value is nil.
 //
 // Logs the failure message with [DefaultLogger].
-func Nil(v any, msg ...any) error {
+func Nil(v any, msg ...any) Failure {
 	return Default.Nil(v, msg...)
 }
 
 // NotNil asserts that the value is not nil.
 //
 // Logs the failure message with [DefaultLogger].
-func NotNil(v any, msg ...any) error {
+func NotNil(v any, msg ...any) Failure {
 	return Default.NotNil(v, msg...)
 }
 
 // True asserts that the value is a boolean true.
 //
 // Logs the failure message with [DefaultLogger].
-func True(v bool, msg ...any) error {
+func True(v bool, msg ...any) Failure {
 	return Default.True(v, msg...)
 }
 
 // False asserts that the value is a boolean false.
 //
 // Logs the failure message with [DefaultLogger].
-func False(v bool, msg ...any) error {
+func False(v bool, msg ...any) Failure {
 	return Default.False(v, msg...)
 }
 
 // Zero asserts that the value is zero-valued.
 //
 // Logs the failure message with [DefaultLogger].
-func Zero(v any, msg ...any) error {
+func Zero(v any, msg ...any) Failure {
 	return Default.Zero(v, msg...)
 }
 
 // NotZero asserts that the value is not zero-valued.
 //
 // Logs the failure message with [DefaultLogger].
-func NotZero(v any, msg ...any) error {
+func NotZero(v any, msg ...any) Failure {
 	return Default.NotZero(v, msg...)
 }
 
 // Panic asserts that the function panics.
 //
 // Logs the failure message with [DefaultLogger].
-func Panic(fn func(), msg ...any) error {
+func Panic(fn func(), msg ...any) Failure {
 	return Default.Panic(fn, msg...)
 }
 
 // NotPanic asserts that the function does not panics.
 //
 // Logs the failure message with [DefaultLogger].
-func NotPanic(fn func(), msg ...any) error {
+func NotPanic(fn func(), msg ...any) Failure {
 	return Default.NotPanic(fn, msg...)
 }
 

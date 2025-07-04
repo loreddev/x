@@ -23,3 +23,7 @@ type Multiplexer interface {
 	Handler(r *http.Request) (h http.Handler, pattern string)
 	http.Handler
 }
+
+func NewMultiplexer() Multiplexer {
+	return http.NewServeMux()
+}

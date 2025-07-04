@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"runtime/debug"
 	"slices"
 	"strings"
 
@@ -73,7 +74,8 @@ func PanicMiddleware() middleware.Middleware {
 			defer func() {
 				if r := recover(); r != nil {
 					err := fmt.Errorf("panic recovered: %+v", r)
-					InternalServerError(err, WithSeverity(FATAL)).ServeHTTP(w, req)
+					stack := strings.Split(string(debug.Stack()), "\n")
+					InternalServerError(err, WithSeverity(FATAL), WithData("stack", stack)).ServeHTTP(w, req)
 				}
 			}()
 			next.ServeHTTP(w, req)
@@ -280,7 +282,7 @@ func HandlerText(e Exception, w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(e.Status)
 
-	_, err := w.Write([]byte(fmt.Sprintf(
+	_, err := w.Write(fmt.Appendf([]byte{},
 		"Status: %3d\n"+
 			"Code: %s"+
 			"Message: %s\n"+
@@ -295,20 +297,20 @@ func HandlerText(e Exception, w http.ResponseWriter, r *http.Request) {
 		e.Severity,
 
 		e, e,
-	)))
+	))
 	if err != nil {
-		_, _ = w.Write([]byte(fmt.Sprintf(
-			"Ok, what should we do at this point? You fucked up so bad that this message " +
-				"shouldn't even be able to be sent in the first place. If you are a normal user I'm " +
-				"so sorry for you to be reading this. If you're a developer, go fix your ResponseWriter " +
-				"implementation, because this should never happen in any normal codebase. " +
-				"I hope for the life of anyone you love you don't use this message in some " +
-				"error checking or any sort of API-contract, because there will be no more hope " +
-				"for you or your project. May God or any other or any other divinity that you may " +
+		_, _ = w.Write(fmt.Append([]byte{},
+			"Ok, what should we do at this point? You fucked up so bad that this message "+
+				"shouldn't even be able to be sent in the first place. If you are a normal user I'm "+
+				"so sorry for you to be reading this. If you're a developer, go fix your ResponseWriter "+
+				"implementation, because this should never happen in any normal codebase. "+
+				"I hope for the life of anyone you love you don't use this message in some "+
+				"error checking or any sort of API-contract, because there will be no more hope "+
+				"for you or your project. May God or any other or any other divinity that you may "+
 				"or may not believe be with you when trying to fix this mistake, you will need it.",
 			// If someone use this as part of the API-contract I'll not even be surprised.
 			// So any change to this message is still considered a breaking change.
-		)))
+		))
 	}
 }
 
