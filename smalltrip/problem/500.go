@@ -136,10 +136,10 @@ func (p NotImplemented[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func NewBadGateway(opts ...Option) BadGateway {
-	return NewStatus(http.StatusBadGateway, opts...)
+	return BadGateway(NewStatus(http.StatusBadGateway, opts...))
 }
 
-type BadGateway = Problem
+type BadGateway Problem
 
 func NewServiceUnavailable[T time.Time | time.Duration](retryAfter T, opts ...Option) ServiceUnavailable[T] {
 	p := NewStatus(http.StatusNotImplemented, opts...)
@@ -217,43 +217,43 @@ func (p ServiceUnavailable[T]) ServeHTTP(w http.ResponseWriter, r *http.Request)
 }
 
 func NewGatewayTimeout(opts ...Option) GatewayTimeout {
-	return NewStatus(http.StatusGatewayTimeout, opts...)
+	return GatewayTimeout(NewStatus(http.StatusGatewayTimeout, opts...))
 }
 
-type GatewayTimeout = Problem
+type GatewayTimeout Problem
 
 func NewHTTPVersionNotSupported(opts ...Option) HTTPVersionNotSupported {
-	return NewStatus(http.StatusHTTPVersionNotSupported, opts...)
+	return HTTPVersionNotSupported(NewStatus(http.StatusHTTPVersionNotSupported, opts...))
 }
 
-type HTTPVersionNotSupported = Problem
+type HTTPVersionNotSupported Problem
 
 func NewVariantAlsoNegotiates(opts ...Option) VariantAlsoNegotiates {
-	return NewStatus(http.StatusVariantAlsoNegotiates, opts...)
+	return VariantAlsoNegotiates(NewStatus(http.StatusVariantAlsoNegotiates, opts...))
 }
 
-type VariantAlsoNegotiates = Problem
+type VariantAlsoNegotiates Problem
 
 func NewInsufficientStorage(opts ...Option) InsufficientStorage {
-	return NewStatus(http.StatusInsufficientStorage, opts...)
+	return InsufficientStorage(NewStatus(http.StatusInsufficientStorage, opts...))
 }
 
-type InsufficientStorage = Problem
+type InsufficientStorage Problem
 
 func NewLoopDetected(opts ...Option) LoopDetected {
-	return NewStatus(http.StatusLoopDetected, opts...)
+	return LoopDetected(NewStatus(http.StatusLoopDetected, opts...))
 }
 
-type LoopDetected = Problem
+type LoopDetected Problem
 
 func NewNotExtended(opts ...Option) NotExtended {
-	return NewStatus(http.StatusNotExtended, opts...)
+	return NotExtended(NewStatus(http.StatusNotExtended, opts...))
 }
 
-type NotExtended = Problem
+type NotExtended Problem
 
 func NewNetworkAuthenticationRequired(opts ...Option) NetworkAuthenticationRequired {
-	return NewStatus(http.StatusNetworkAuthenticationRequired, opts...)
+	return NetworkAuthenticationRequired(NewStatus(http.StatusNetworkAuthenticationRequired, opts...))
 }
 
-type NetworkAuthenticationRequired = Problem
+type NetworkAuthenticationRequired Problem
