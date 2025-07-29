@@ -8,91 +8,90 @@ import (
 	"strings"
 )
 
-func ProblemHandler(p any) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		h := r.Header.Get("Accept")
-		if strings.Contains(h, "application/xml") || strings.Contains(h, ProblemMediaTypeXML) {
-			ProblemHandlerXML(p).ServeHTTP(w, r)
-			return
-		}
-		ProblemHandlerJSON(p).ServeHTTP(w, r)
-	})
+type Handler func(p Problem) http.Handler
+
+func HandlerAll(p Problem) http.Handler {
+	h := HandlerContentType(map[string]Handler{
+		"application/xml":    HandlerXML,
+		ProblemMediaTypeXML:  HandlerXML,
+		"application/json":   HandlerJSON,
+		ProblemMediaTypeJSON: HandlerJSON,
+	}, HandlerJSON)
+	return h(p)
 }
 
-func ProblemHandlerXML(p any) http.Handler {
+func HandlerContentType(handlers map[string]Handler, fallback ...Handler) Handler {
+	return func(p Problem) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			for t, h := range handlers {
+				if strings.Contains(r.Header.Get("Accept"), t) {
+					h(p).ServeHTTP(w, r)
+					return
+				}
+			}
+			if len(fallback) > 0 {
+				fallback[0](p).ServeHTTP(w, r)
+			}
+		})
+	}
+}
+
+func HandlerXML(p Problem) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// w.Header().Set("Content-Type", ProblemMediaTypeXML)
-		w.Header().Set("Content-Type", "application/xml")
+		w.Header().Set("Content-Type", ProblemMediaTypeXML)
 
 		b, err := xml.Marshal(p)
 		if err != nil {
-			ProblemHandlerJSON(p).ServeHTTP(w, r)
+			HandlerJSON(p).ServeHTTP(w, r)
 			return
 		}
 
-		w.WriteHeader(GetStatus(p))
+		w.WriteHeader(p.Status())
 
 		_, err = w.Write(b)
 		if err != nil {
-			ProblemHandlerJSON(p).ServeHTTP(w, r)
+			HandlerJSON(p).ServeHTTP(w, r)
 		}
 	})
 }
 
-func ProblemHandlerJSON(p any) http.Handler {
+func HandlerJSON(p Problem) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", ProblemMediaTypeJSON)
 
 		b, err := json.Marshal(p)
 		if err != nil {
-			ProblemHandlerText(p).ServeHTTP(w, r)
+			HandlerText(p).ServeHTTP(w, r)
 			return
 		}
 
-		w.WriteHeader(GetStatus(p))
+		w.WriteHeader(p.Status())
 
 		_, err = w.Write(b)
 		if err != nil {
-			ProblemHandlerText(p).ServeHTTP(w, r)
+			HandlerText(p).ServeHTTP(w, r)
 		}
 	})
 }
 
-func ProblemHandlerText(p any) http.Handler {
+func HandlerText(p Problem) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 
-		w.WriteHeader(GetStatus(p))
+		w.WriteHeader(p.Status())
 
-		var s string
-		if p, ok := p.(Problem); ok {
-			s = fmt.Sprintf(
-				"Type: %s\n"+
-					"Status: %3d\n"+
-					"Title: %s\n"+
-					"Detail: %s\n"+
-					"Instance: %s\n\n"+
-					p.Type,
-				p.Status,
-				p.Title,
-				p.Detail,
-				p.Instance,
-			)
-		}
-		if p, ok := p.(*Problem); ok {
-			s = fmt.Sprintf(
-				"Type: %s\n"+
-					"Status: %3d\n"+
-					"Title: %s\n"+
-					"Detail: %s\n"+
-					"Instance: %s\n\n"+
-					p.Type,
-				p.Status,
-				p.Title,
-				p.Detail,
-				p.Instance,
-			)
-		}
+		s := fmt.Sprintf(
+			"Type: %s\n"+
+				"Status: %3d\n"+
+				"Title: %s\n"+
+				"Detail: %s\n"+
+				"Instance: %s\n\n"+
+				p.Type(),
+			p.Status(),
+			p.Title(),
+			p.Detail(),
+			p.Instance(),
+		)
 
 		_, err := w.Write(fmt.Appendf([]byte{}, "%s%+v\n\n%#v", s, p, p))
 		if err != nil {
@@ -110,13 +109,6 @@ func ProblemHandlerText(p any) http.Handler {
 			))
 		}
 	})
-}
-
-func GetStatus(p any) int {
-	if p, ok := p.(interface{ StatusCode() int }); ok {
-		return p.StatusCode()
-	}
-	return http.StatusInternalServerError
 }
 
 const (
