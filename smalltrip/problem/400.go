@@ -8,10 +8,10 @@ import (
 )
 
 func NewBadRequest(detail string, opts ...Option) BadRequest {
-	return BadRequest(NewDetailed(http.StatusBadRequest, detail, opts...))
+	return BadRequest{NewDetailed(http.StatusBadRequest, detail, opts...)}
 }
 
-type BadRequest Problem
+type BadRequest struct{ Problem }
 
 func NewUnauthorized(scheme AuthScheme, opts ...Option) Unauthorized {
 	return Unauthorized{
@@ -37,22 +37,22 @@ func (p Unauthorized) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func NewPaymentRequired(opts ...Option) PaymentRequired {
-	return PaymentRequired(NewStatus(http.StatusPaymentRequired, opts...))
+	return PaymentRequired{NewStatus(http.StatusPaymentRequired, opts...)}
 }
 
-type PaymentRequired Problem
+type PaymentRequired struct{ Problem }
 
 func NewForbidden(opts ...Option) Forbidden {
-	return Forbidden(NewStatus(http.StatusForbidden, opts...))
+	return Forbidden{NewStatus(http.StatusForbidden, opts...)}
 }
 
-type Forbidden Problem
+type Forbidden struct{ Problem }
 
 func NewNotFound(opts ...Option) NotFound {
-	return NotFound(NewStatus(http.StatusNotFound, opts...))
+	return NotFound{NewStatus(http.StatusNotFound, opts...)}
 }
 
-type NotFound Problem
+type NotFound struct{ Problem }
 
 func NewMethodNotAllowed[T string | []string](allow T, opts ...Option) MethodNotAllowed {
 	p := MethodNotAllowed{
@@ -151,10 +151,10 @@ type AuthScheme struct {
 }
 
 func NewRequestTimeout(opts ...Option) RequestTimeout {
-	return RequestTimeout(NewStatus(http.StatusRequestTimeout, opts...))
+	return RequestTimeout{NewStatus(http.StatusRequestTimeout, opts...)}
 }
 
-type RequestTimeout Problem
+type RequestTimeout struct{ Problem }
 
 func (p RequestTimeout) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "close")
@@ -162,46 +162,46 @@ func (p RequestTimeout) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func NewConflict(opts ...Option) Conflict {
-	return Conflict(NewStatus(http.StatusConflict, opts...))
+	return Conflict{NewStatus(http.StatusConflict, opts...)}
 }
 
-type Conflict Problem
+type Conflict struct{ Problem }
 
 func NewGone(opts ...Option) Gone {
-	return Gone(NewStatus(http.StatusGone, opts...))
+	return Gone{NewStatus(http.StatusGone, opts...)}
 }
 
-type Gone Problem
+type Gone struct{ Problem }
 
 func NewLengthRequired(opts ...Option) LengthRequired {
-	return LengthRequired(NewStatus(http.StatusLengthRequired, opts...))
+	return LengthRequired{NewStatus(http.StatusLengthRequired, opts...)}
 }
 
-type LengthRequired Problem
+type LengthRequired struct{ Problem }
 
 func NewPreconditionFailed(opts ...Option) PreconditionFailed {
-	return PreconditionFailed(NewStatus(http.StatusPreconditionFailed, opts...))
+	return PreconditionFailed{NewStatus(http.StatusPreconditionFailed, opts...)}
 }
 
-type PreconditionFailed Problem
+type PreconditionFailed struct{ Problem }
 
 func NewContentTooLarge(opts ...Option) ContentTooLarge {
-	return ContentTooLarge(NewStatus(http.StatusRequestEntityTooLarge, opts...))
+	return ContentTooLarge{NewStatus(http.StatusRequestEntityTooLarge, opts...)}
 }
 
-type ContentTooLarge Problem
+type ContentTooLarge struct{ Problem }
 
 func NewURITooLong(opts ...Option) URITooLong {
-	return URITooLong(NewStatus(http.StatusRequestURITooLong, opts...))
+	return URITooLong{NewStatus(http.StatusRequestURITooLong, opts...)}
 }
 
-type URITooLong Problem
+type URITooLong struct{ Problem }
 
 func NewUnsupportedMediaType(opts ...Option) UnsupportedMediaType {
-	return UnsupportedMediaType(NewStatus(http.StatusUnsupportedMediaType, opts...))
+	return UnsupportedMediaType{NewStatus(http.StatusUnsupportedMediaType, opts...)}
 }
 
-type UnsupportedMediaType Problem
+type UnsupportedMediaType struct{ Problem }
 
 func NewRangeNotSatisfiable(unit string, contentRange int, opts ...Option) RangeNotSatisfiable {
 	return RangeNotSatisfiable{
@@ -221,47 +221,47 @@ func (p RangeNotSatisfiable) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func NewExpectationFailed(opts ...Option) ExpectationFailed {
-	return ExpectationFailed(NewStatus(http.StatusExpectationFailed, opts...))
+	return ExpectationFailed{NewStatus(http.StatusExpectationFailed, opts...)}
 }
 
-type ExpectationFailed Problem
+type ExpectationFailed struct{ Problem }
 
 func NewTeapot(opts ...Option) Teapot {
-	return Teapot(NewStatus(http.StatusTeapot, opts...))
+	return Teapot{NewStatus(http.StatusTeapot, opts...)}
 }
 
-type Teapot Problem
+type Teapot struct{ Problem }
 
 func NewMisdirectedRequest(opts ...Option) MisdirectedRequest {
-	return MisdirectedRequest(NewStatus(http.StatusMisdirectedRequest, opts...))
+	return MisdirectedRequest{NewStatus(http.StatusMisdirectedRequest, opts...)}
 }
 
-type MisdirectedRequest Problem
+type MisdirectedRequest struct{ Problem }
 
 func NewUnprocessableContent(opts ...Option) UnprocessableContent {
-	return UnprocessableContent(NewStatus(http.StatusUnprocessableEntity, opts...))
+	return UnprocessableContent{NewStatus(http.StatusUnprocessableEntity, opts...)}
 }
 
-type UnprocessableContent Problem
+type UnprocessableContent struct{ Problem }
 
 // TODO?: Should the response of this be different and follow WebDAV's XML format?
 func NewLocked(opts ...Option) Locked {
-	return Locked(NewStatus(http.StatusLocked, opts...))
+	return Locked{NewStatus(http.StatusLocked, opts...)}
 }
 
-type Locked Problem
+type Locked struct{ Problem }
 
 func NewFailedDependency(opts ...Option) FailedDependency {
-	return FailedDependency(NewStatus(http.StatusFailedDependency, opts...))
+	return FailedDependency{NewStatus(http.StatusFailedDependency, opts...)}
 }
 
-type FailedDependency Problem
+type FailedDependency struct{ Problem }
 
 func NewTooEarly(opts ...Option) TooEarly {
-	return TooEarly(NewStatus(http.StatusTooEarly, opts...))
+	return TooEarly{NewStatus(http.StatusTooEarly, opts...)}
 }
 
-type TooEarly Problem
+type TooEarly struct{ Problem }
 
 func NewUpgradeRequired(protocol Protocol, opts ...Option) UpgradeRequired {
 	return UpgradeRequired{
@@ -289,14 +289,14 @@ const (
 type Protocol string
 
 func NewPreconditionRequired(opts ...Option) PreconditionRequired {
-	return PreconditionRequired(NewStatus(http.StatusPreconditionRequired, opts...))
+	return PreconditionRequired{NewStatus(http.StatusPreconditionRequired, opts...)}
 }
 
-type PreconditionRequired Problem
+type PreconditionRequired struct{ Problem }
 
 func NewTooManyRequests[T time.Time | time.Duration](retryAfter T, opts ...Option) TooManyRequests[T] {
 	p := NewStatus(http.StatusTooManyRequests, opts...)
-	return TooManyRequests[T]{Problem: p, RetryAfter: retryAfter}
+	return TooManyRequests[T]{Problem: p, RetryAfter: RetryAfter[T]{time: retryAfter}}
 }
 
 type TooManyRequests[T time.Time | time.Duration] struct {
@@ -310,13 +310,13 @@ func (p TooManyRequests[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func NewRequestHeaderFieldsTooLarge(opts ...Option) RequestHeaderFieldsTooLarge {
-	return RequestHeaderFieldsTooLarge(NewStatus(http.StatusRequestHeaderFieldsTooLarge, opts...))
+	return RequestHeaderFieldsTooLarge{NewStatus(http.StatusRequestHeaderFieldsTooLarge, opts...)}
 }
 
-type RequestHeaderFieldsTooLarge Problem
+type RequestHeaderFieldsTooLarge struct{ Problem }
 
 func NewUnavailableForLegalReasons(opts ...Option) UnavailableForLegalReasons {
-	return UnavailableForLegalReasons(NewStatus(http.StatusUnavailableForLegalReasons, opts...))
+	return UnavailableForLegalReasons{NewStatus(http.StatusUnavailableForLegalReasons, opts...)}
 }
 
-type UnavailableForLegalReasons Problem
+type UnavailableForLegalReasons struct{ Problem }

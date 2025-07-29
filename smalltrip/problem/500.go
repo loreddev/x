@@ -60,7 +60,7 @@ func (i ErrorTree) Error() string {
 
 func NewNotImplemented[T time.Time | time.Duration](retryAfter T, opts ...Option) NotImplemented[T] {
 	p := NewStatus(http.StatusNotImplemented, opts...)
-	return NotImplemented[T]{Problem: p, RetryAfter: retryAfter}
+	return NotImplemented[T]{Problem: p, RetryAfter: RetryAfter[T]{time: retryAfter}}
 }
 
 type NotImplemented[T time.Time | time.Duration] struct {
@@ -74,14 +74,14 @@ func (p NotImplemented[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func NewBadGateway(opts ...Option) BadGateway {
-	return BadGateway(NewStatus(http.StatusBadGateway, opts...))
+	return BadGateway{NewStatus(http.StatusBadGateway, opts...)}
 }
 
-type BadGateway Problem
+type BadGateway struct{ Problem }
 
 func NewServiceUnavailable[T time.Time | time.Duration](retryAfter T, opts ...Option) ServiceUnavailable[T] {
 	p := NewStatus(http.StatusNotImplemented, opts...)
-	return ServiceUnavailable[T]{Problem: p, RetryAfter: retryAfter}
+	return ServiceUnavailable[T]{Problem: p, RetryAfter: RetryAfter[T]{time: retryAfter}}
 }
 
 type ServiceUnavailable[T time.Time | time.Duration] struct {
@@ -95,43 +95,43 @@ func (p ServiceUnavailable[T]) ServeHTTP(w http.ResponseWriter, r *http.Request)
 }
 
 func NewGatewayTimeout(opts ...Option) GatewayTimeout {
-	return GatewayTimeout(NewStatus(http.StatusGatewayTimeout, opts...))
+	return GatewayTimeout{NewStatus(http.StatusGatewayTimeout, opts...)}
 }
 
-type GatewayTimeout Problem
+type GatewayTimeout struct{ Problem }
 
 func NewHTTPVersionNotSupported(opts ...Option) HTTPVersionNotSupported {
-	return HTTPVersionNotSupported(NewStatus(http.StatusHTTPVersionNotSupported, opts...))
+	return HTTPVersionNotSupported{NewStatus(http.StatusHTTPVersionNotSupported, opts...)}
 }
 
-type HTTPVersionNotSupported Problem
+type HTTPVersionNotSupported struct{ Problem }
 
 func NewVariantAlsoNegotiates(opts ...Option) VariantAlsoNegotiates {
-	return VariantAlsoNegotiates(NewStatus(http.StatusVariantAlsoNegotiates, opts...))
+	return VariantAlsoNegotiates{NewStatus(http.StatusVariantAlsoNegotiates, opts...)}
 }
 
-type VariantAlsoNegotiates Problem
+type VariantAlsoNegotiates struct{ Problem }
 
 func NewInsufficientStorage(opts ...Option) InsufficientStorage {
-	return InsufficientStorage(NewStatus(http.StatusInsufficientStorage, opts...))
+	return InsufficientStorage{NewStatus(http.StatusInsufficientStorage, opts...)}
 }
 
-type InsufficientStorage Problem
+type InsufficientStorage struct{ Problem }
 
 func NewLoopDetected(opts ...Option) LoopDetected {
-	return LoopDetected(NewStatus(http.StatusLoopDetected, opts...))
+	return LoopDetected{NewStatus(http.StatusLoopDetected, opts...)}
 }
 
-type LoopDetected Problem
+type LoopDetected struct{ Problem }
 
 func NewNotExtended(opts ...Option) NotExtended {
-	return NotExtended(NewStatus(http.StatusNotExtended, opts...))
+	return NotExtended{NewStatus(http.StatusNotExtended, opts...)}
 }
 
-type NotExtended Problem
+type NotExtended struct{ Problem }
 
 func NewNetworkAuthenticationRequired(opts ...Option) NetworkAuthenticationRequired {
-	return NetworkAuthenticationRequired(NewStatus(http.StatusNetworkAuthenticationRequired, opts...))
+	return NetworkAuthenticationRequired{NewStatus(http.StatusNetworkAuthenticationRequired, opts...)}
 }
 
-type NetworkAuthenticationRequired Problem
+type NetworkAuthenticationRequired struct{ Problem }
