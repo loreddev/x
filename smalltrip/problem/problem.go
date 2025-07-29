@@ -7,91 +7,126 @@ import (
 	"slices"
 )
 
-type Problem struct {
-	Type     string `json:"type,omitempty"     xml:"type,omitempty"`
-	Title    string `json:"title,omitempty"    xml:"title,omitempty"`
-	Status   int    `json:"status,omitempty"   xml:"status,omitempty"`
-	Detail   string `json:"detail,omitempty"   xml:"detail,omitempty"`
-	Instance string `json:"instance,omitempty" xml:"instance,omitempty"`
+type Problem interface {
+	Type() string
+	Title() string
+	Status() int
+	Detail() string
+	Instance() string
+
+	Handler(self Problem) http.Handler
+
+	http.Handler
+}
+
+type RegisteredProblem struct {
+	TypeURI       string `json:"type,omitempty"     xml:"type,omitempty"`
+	TypeTitle     string `json:"title,omitempty"    xml:"title,omitempty"`
+	StatusCode    int    `json:"status,omitempty"   xml:"status,omitempty"`
+	DetailMessage string `json:"detail,omitempty"   xml:"detail,omitempty"`
+	InstanceURI   string `json:"instance,omitempty" xml:"instance,omitempty"`
 
 	XMLName xml.Name `json:"-" xml:"problem"`
 
-	handler func(any) http.Handler `json:"-" xml:"-"`
+	handler Handler `json:"-" xml:"-"`
 }
 
-func New(opts ...Option) Problem {
-	p := Problem{
-		Type:    DefaultType,
-		handler: ProblemHandler,
+func NewStatus(s int, opts ...Option) RegisteredProblem {
+	return New(slices.Concat([]Option{WithStatus(s)}, opts)...)
+}
+
+func NewDetailed(s int, detail string, opts ...Option) RegisteredProblem {
+	return New(slices.Concat([]Option{WithStatus(s), WithDetail(detail)}, opts)...)
+}
+
+func New(opts ...Option) RegisteredProblem {
+	p := RegisteredProblem{
+		TypeURI: DefaultTypeURI,
+		handler: DefaultHandler,
 	}
+
 	for _, opt := range opts {
 		opt(&p)
 	}
 	return p
 }
 
-const DefaultType = "about:blank"
+var (
+	DefaultTypeURI = "about:blank"
+	DefaultHandler = HandlerAll
+)
 
-func NewStatus(s int, opts ...Option) Problem {
-	return New(slices.Concat([]Option{WithStatus(s)}, opts)...)
+func (p RegisteredProblem) Type() string {
+	return p.TypeURI
 }
 
-func NewDetailed(s int, detail string, opts ...Option) Problem {
-	return New(slices.Concat([]Option{WithStatus(s), WithDetail(detail)}, opts)...)
+func (p RegisteredProblem) Title() string {
+	return p.TypeTitle
 }
 
-func (p Problem) StatusCode() int {
-	return p.Status
+func (p RegisteredProblem) Status() int {
+	return p.StatusCode
 }
 
-func (p Problem) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	p.handler(p).ServeHTTP(w, r)
+func (p RegisteredProblem) Detail() string {
+	return p.DetailMessage
+}
+
+func (p RegisteredProblem) Instance() string {
+	return p.InstanceURI
+}
+
+func (p RegisteredProblem) Handler(self Problem) http.Handler {
+	return p.handler(self)
+}
+
+func (p RegisteredProblem) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	p.Handler(p).ServeHTTP(w, r)
 }
 
 func WithType(t string) Option {
-	return func(p *Problem) {
-		p.Type = t
+	return func(p *RegisteredProblem) {
+		p.TypeURI = t
 	}
 }
 
 func WithTitle(t string) Option {
-	return func(p *Problem) {
-		p.Title = t
+	return func(p *RegisteredProblem) {
+		p.TypeTitle = t
 	}
 }
 
 func WithStatus(s int) Option {
-	return func(p *Problem) {
-		if p.Title == "" {
-			p.Title = http.StatusText(s)
+	return func(p *RegisteredProblem) {
+		if p.TypeTitle == "" {
+			p.TypeTitle = http.StatusText(s)
 		}
-
-		p.Status = s
+		p.StatusCode = s
 	}
 }
 
 func WithDetail(d string) Option {
-	return func(p *Problem) {
-		p.Detail = d
+	return func(p *RegisteredProblem) {
+		p.DetailMessage = d
 	}
 }
 
 func WithDetailf(f string, args ...any) Option {
-	return func(p *Problem) {
-		p.Detail = fmt.Sprintf(f, args...)
+	return func(p *RegisteredProblem) {
+		p.DetailMessage = fmt.Sprintf(f, args...)
 	}
 }
 
 func WithError(err error) Option {
-	return func(p *Problem) {
-		p.Detail = err.Error()
+	return func(p *RegisteredProblem) {
+		p.DetailMessage = err.Error()
 	}
 }
 
 func WithInstance(i string) Option {
-	return func(p *Problem) {
-		p.Instance = i
+	return func(p *RegisteredProblem) {
+		p.InstanceURI = i
 	}
 }
 
-type Option func(*Problem)
+type Option func(*RegisteredProblem)
