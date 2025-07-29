@@ -1,9 +1,6 @@
 package problem
 
 import (
-	"encoding/json"
-	"encoding/xml"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -304,71 +301,11 @@ func NewTooManyRequests[T time.Time | time.Duration](retryAfter T, opts ...Optio
 
 type TooManyRequests[T time.Time | time.Duration] struct {
 	Problem
-	RetryAfter T `json:"retryAfter" xml:"retry-after"`
-}
-
-var (
-	_ json.Marshaler = TooManyRequests[time.Time]{}
-	_ xml.Marshaler  = TooManyRequests[time.Time]{}
-)
-
-func (p TooManyRequests[T]) MarshalJSON() ([]byte, error) {
-	switch t := any(p.RetryAfter).(type) {
-	case time.Time:
-		return json.Marshal(struct {
-			Problem
-			RetryAfter string `json:"retryAfter,omitempty"`
-		}{
-			Problem:    p.Problem,
-			RetryAfter: t.Format(time.RFC3339),
-		})
-	case time.Duration:
-		return json.Marshal(struct {
-			Problem
-			RetryAfter int `json:"retryAfter,omitempty"`
-		}{
-			Problem:    p.Problem,
-			RetryAfter: int(t.Seconds()),
-		})
-	default:
-		return nil, errors.New("problems-not-implemented: RetryAfter is not of type time.Time or time.Duration")
-	}
-}
-
-func (p TooManyRequests[T]) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
-	switch t := any(p.RetryAfter).(type) {
-	case time.Time:
-		return e.Encode(struct {
-			Problem
-			RetryAfter string `xml:"retry-after,omitempty"`
-		}{
-			Problem:    p.Problem,
-			RetryAfter: t.Format(time.RFC3339),
-		})
-	case time.Duration:
-		return e.Encode(struct {
-			Problem
-			RetryAfter int `xml:"retry-after,omitempty"`
-		}{
-			Problem:    p.Problem,
-			RetryAfter: int(t.Seconds()),
-		})
-	default:
-		return errors.New("problems-not-implemented: RetryAfter is not of type time.Time or time.Duration")
-	}
+	RetryAfter RetryAfter[T] `json:"retryAfter" xml:"retry-after"`
 }
 
 func (p TooManyRequests[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	switch t := any(p.RetryAfter).(type) {
-	case time.Time:
-		if !t.IsZero() {
-			w.Header().Set("Retry-After", t.Format(http.TimeFormat))
-		}
-	case time.Duration:
-		if t != 0 {
-			w.Header().Set("Retry-After", fmt.Sprintf("%.0f", t.Seconds()))
-		}
-	}
+	w.Header().Set("Retry-After", p.RetryAfter.String())
 	p.handler(p).ServeHTTP(w, r)
 }
 
