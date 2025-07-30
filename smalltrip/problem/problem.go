@@ -140,19 +140,23 @@ func WithStatus(s int) Option {
 
 func WithDetail(d string) Option {
 	return func(p *RegisteredProblem) {
-		p.DetailMessage = d
+		if p.DetailMessage != "" {
+			p.DetailMessage = fmt.Sprintf("%s: %s", p.DetailMessage, d)
+		} else {
+			p.DetailMessage = d
+		}
 	}
 }
 
 func WithDetailf(f string, args ...any) Option {
 	return func(p *RegisteredProblem) {
-		p.DetailMessage = fmt.Sprintf(f, args...)
+		WithDetail(fmt.Sprintf(f, args...))(p)
 	}
 }
 
 func WithError(err error) Option {
 	return func(p *RegisteredProblem) {
-		p.DetailMessage = err.Error()
+		WithDetail(err.Error())(p)
 	}
 }
 
