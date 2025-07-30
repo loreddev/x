@@ -686,17 +686,17 @@ func NewDisabled(opts ...Option) AssertionsErr {
 	return &disabledAssertions{}
 }
 
-func (*disabledAssertions) Ok(any, ...any)                         { return }
-func (*disabledAssertions) Equal(_, _ any, _ ...any)               { return }
-func (*disabledAssertions) NotEqual(_, _ any, _ ...any)            { return }
-func (*disabledAssertions) Nil(any, ...any)                        { return }
-func (*disabledAssertions) NotNil(any, ...any)                     { return }
-func (*disabledAssertions) True(bool, ...any)                      { return }
-func (*disabledAssertions) False(bool, ...any)                     { return }
-func (*disabledAssertions) Zero(any, ...any)                       { return }
-func (*disabledAssertions) NotZero(any, ...any)                    { return }
-func (*disabledAssertions) Panic(func(), ...any)                   { return }
-func (*disabledAssertions) NotPanic(func(), ...any)                { return }
+func (*disabledAssertions) Ok(any, ...any)                         {}
+func (*disabledAssertions) Equal(_, _ any, _ ...any)               {}
+func (*disabledAssertions) NotEqual(_, _ any, _ ...any)            {}
+func (*disabledAssertions) Nil(any, ...any)                        {}
+func (*disabledAssertions) NotNil(any, ...any)                     {}
+func (*disabledAssertions) True(bool, ...any)                      {}
+func (*disabledAssertions) False(bool, ...any)                     {}
+func (*disabledAssertions) Zero(any, ...any)                       {}
+func (*disabledAssertions) NotZero(any, ...any)                    {}
+func (*disabledAssertions) Panic(func(), ...any)                   {}
+func (*disabledAssertions) NotPanic(func(), ...any)                {}
 func (*disabledAssertions) OkErr(any, ...any) Failure              { return nil }
 func (*disabledAssertions) EqualErr(_, _ any, _ ...any) Failure    { return nil }
 func (*disabledAssertions) NotEqualErr(_, _ any, _ ...any) Failure { return nil }
