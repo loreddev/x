@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"text/template"
 )
 
 type Problem interface {
@@ -52,8 +53,25 @@ func New(opts ...Option) RegisteredProblem {
 }
 
 var (
-	DefaultTypeURI = "about:blank"
-	DefaultHandler = HandlerAll
+	DefaultTypeURI  = "about:blank"
+	DefaultTemplate = template.Must(template.New("x-smalltrip-problem-template").Parse(`
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>{{ .Status }} - {{ .Title }}</title>
+	</head>
+	<body>
+		<h1>{{.Status}} - {{ .Title }}</h1>
+		<p><code>{{ .Type }}</code></p>
+		<p>{{ .Detail }}</p>
+		{{if .Instance}}
+			<p>Instance: {{ .Instance }}</p>
+		{{end}}
+		<code>{{printf "%#v" .}}<code>
+	</body>
+<html>
+`))
+	DefaultHandler = HandlerMiddleware(HandlerBrowser(DefaultTemplate))
 )
 
 func (p RegisteredProblem) Type() string {
