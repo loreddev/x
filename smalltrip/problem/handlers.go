@@ -37,45 +37,45 @@ func HandlerContentType(handlers map[string]Handler, fallback ...Handler) Handle
 }
 
 func HandlerXML(p Problem) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", ProblemMediaTypeXML)
 
 		b, err := xml.Marshal(p)
 		if err != nil {
-			HandlerJSON(p).ServeHTTP(w, r)
-			return
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write(fmt.Appendf([]byte{}, "Failed to marshal problem XML: %s\n\nPlease report this error to the site's admin.", err.Error()))
 		}
 
 		w.WriteHeader(p.Status())
 
 		_, err = w.Write(b)
 		if err != nil {
-			HandlerJSON(p).ServeHTTP(w, r)
+			_, _ = w.Write(fmt.Appendf([]byte{}, "Failed to write problem XML: %s\n\nPlease report this error to the site's admin.", err.Error()))
 		}
 	})
 }
 
 func HandlerJSON(p Problem) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", ProblemMediaTypeJSON)
 
 		b, err := json.Marshal(p)
 		if err != nil {
-			HandlerText(p).ServeHTTP(w, r)
-			return
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write(fmt.Appendf([]byte{}, "Failed to marshal problem JSON: %s\n\nPlease report this error to the site's admin.", err.Error()))
 		}
 
 		w.WriteHeader(p.Status())
 
 		_, err = w.Write(b)
 		if err != nil {
-			HandlerText(p).ServeHTTP(w, r)
+			_, _ = w.Write(fmt.Appendf([]byte{}, "Failed to write problem JSON: %s\n\nPlease report this error to the site's admin.", err.Error()))
 		}
 	})
 }
 
 func HandlerText(p Problem) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 
 		w.WriteHeader(p.Status())
