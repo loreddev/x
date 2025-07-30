@@ -17,10 +17,28 @@ package problem
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"forge.capytal.company/loreddev/x/smalltrip/middleware"
 )
+
+// TODO?: BufferedMiddleware, a middleware which can respond or redirect to
+// a error page even after the first Write
+
+func PanicMiddleware() middleware.Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			defer func() {
+				if rv := recover(); rv != nil {
+					err := fmt.Errorf("panic recovered: %+v", rv)
+					NewInternalServerError(err).ServeHTTP(w, r)
+				}
+			}()
+			next.ServeHTTP(w, r)
+		})
+	}
+}
 
 func Middleware(h Handler) middleware.Middleware {
 	return func(next http.Handler) http.Handler {
