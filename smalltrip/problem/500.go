@@ -22,7 +22,7 @@ import (
 	"time"
 )
 
-func NewInternalError(err error, opts ...Option) InternalServerError {
+func NewInternalServerError(err error, opts ...Option) InternalServerError {
 	return InternalServerError{
 		RegisteredProblem: NewDetailed(http.StatusInternalServerError, err.Error(), opts...),
 		Errors:            newErrorTree(err).Errors,
