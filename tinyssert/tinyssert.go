@@ -720,14 +720,14 @@ var (
 	Default = New(WithLogger(DefaultLogger))
 )
 
-// OK asserts that the value is not zero-valued, is nil, or panics, aka. "is ok".
+// Ok asserts that the value is not zero-valued, is nil, or panics, aka. "is ok".
 //
 // Logs the failure message with [DefaultLogger].
 func Ok(obj any, msg ...any) {
 	Default.Ok(obj, msg...)
 }
 
-// OK asserts that the value is not zero-valued, is nil, or panics, aka. "is ok".
+// OkErr asserts that the value is not zero-valued, is nil, or panics, aka. "is ok".
 // Returns a Failure if the assertion fails, otherwise returns nil.
 //
 // Logs the failure message with [DefaultLogger].
@@ -742,7 +742,7 @@ func Equal(expected, actual any, msg ...any) {
 	Default.Equal(expected, actual, msg...)
 }
 
-// Equal asserts that the actual value is equal to the expected value.
+// EqualErr asserts that the actual value is equal to the expected value.
 // Returns a Failure if the assertion fails, otherwise returns nil.
 //
 // Logs the failure message with [DefaultLogger].
@@ -757,7 +757,7 @@ func NotEqual(notExpected, actual any, msg ...any) {
 	Default.NotEqual(notExpected, actual, msg...)
 }
 
-// NotEqual asserts that the actual value is not equal to the expected value.
+// NotEqualErr asserts that the actual value is not equal to the expected value.
 // Returns a Failure if the assertion fails, otherwise returns nil.
 //
 // Logs the failure message with [DefaultLogger].
@@ -772,7 +772,7 @@ func Nil(v any, msg ...any) {
 	Default.Nil(v, msg...)
 }
 
-// Nil asserts that the value is nil.
+// NilErr asserts that the value is nil.
 // Returns a Failure if the assertion fails, otherwise returns nil.
 //
 // Logs the failure message with [DefaultLogger].
@@ -787,7 +787,7 @@ func NotNil(v any, msg ...any) {
 	Default.NotNil(v, msg...)
 }
 
-// NotNil asserts that the value is not nil.
+// NotNilErr asserts that the value is not nil.
 // Returns a Failure if the assertion fails, otherwise returns nil.
 //
 // Logs the failure message with [DefaultLogger].
@@ -802,7 +802,7 @@ func True(v bool, msg ...any) {
 	Default.True(v, msg...)
 }
 
-// True asserts that the value is a boolean true.
+// TrueErr asserts that the value is a boolean true.
 // Returns a Failure if the assertion fails, otherwise returns nil.
 //
 // Logs the failure message with [DefaultLogger].
@@ -817,7 +817,7 @@ func False(v bool, msg ...any) {
 	Default.False(v, msg...)
 }
 
-// False asserts that the value is a boolean false.
+// FalseErr asserts that the value is a boolean false.
 // Returns a Failure if the assertion fails, otherwise returns nil.
 //
 // Logs the failure message with [DefaultLogger].
@@ -832,7 +832,7 @@ func Zero(v any, msg ...any) {
 	Default.Zero(v, msg...)
 }
 
-// Zero asserts that the value is zero-valued.
+// ZeroErr asserts that the value is zero-valued.
 // Returns a Failure if the assertion fails, otherwise returns nil.
 //
 // Logs the failure message with [DefaultLogger].
@@ -847,7 +847,7 @@ func NotZero(v any, msg ...any) {
 	Default.NotZero(v, msg...)
 }
 
-// NotZero asserts that the value is not zero-valued.
+// NotZeroErr asserts that the value is not zero-valued.
 // Returns a Failure if the assertion fails, otherwise returns nil.
 //
 // Logs the failure message with [DefaultLogger].
@@ -862,7 +862,7 @@ func Panic(fn func(), msg ...any) {
 	Default.Panic(fn, msg...)
 }
 
-// Panic asserts that the function panics.
+// PanicErr asserts that the function panics.
 // Returns a Failure if the assertion fails, otherwise returns nil.
 //
 // Logs the failure message with [DefaultLogger].
@@ -877,7 +877,7 @@ func NotPanic(fn func(), msg ...any) {
 	Default.NotPanic(fn, msg...)
 }
 
-// NotPanic asserts that the function does not panics.
+// NotPanicErr asserts that the function does not panics.
 // Returns a Failure if the assertion fails, otherwise returns nil.
 //
 // Logs the failure message with [DefaultLogger].
@@ -895,6 +895,7 @@ func FailNow(f Failure) {
 	Default.FailNow(f)
 }
 
+// CallerInfo gets the caller stack.
 func CallerInfo() []string {
 	return Default.CallerInfo()
 }
