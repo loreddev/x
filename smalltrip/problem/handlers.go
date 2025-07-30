@@ -4,20 +4,29 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 )
 
 type Handler func(p Problem) http.Handler
 
-func HandlerAll(p Problem) http.Handler {
-	h := HandlerContentType(map[string]Handler{
-		"application/xml":    HandlerXML,
-		ProblemMediaTypeXML:  HandlerXML,
-		"application/json":   HandlerJSON,
-		ProblemMediaTypeJSON: HandlerJSON,
-	}, HandlerJSON)
-	return h(p)
+// TODO: HandlerDevpage, this handler will be a complete handler with the smalltrip logo and a stylized page showing the error, JSON and XML values, and accepting a custom
+// template to add custom styling.
+
+func HandlerBrowser(template Template) Handler {
+	return func(p Problem) http.Handler {
+		h := HandlerContentType(map[string]Handler{
+			"text/html":            HandlerTemplate(template),
+			"application/xml+html": HandlerTemplate(template),
+			"application/xml":      HandlerXML,
+			ProblemMediaTypeXML:    HandlerXML,
+			"application/json":     HandlerJSON,
+			ProblemMediaTypeJSON:   HandlerJSON,
+		}, HandlerJSON)
+		return h(p)
+	}
+}
 
 func HandlerTemplate(template Template) Handler {
 	return func(p Problem) http.Handler {
