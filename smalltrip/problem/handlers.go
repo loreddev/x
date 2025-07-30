@@ -18,6 +18,20 @@ func HandlerAll(p Problem) http.Handler {
 		ProblemMediaTypeJSON: HandlerJSON,
 	}, HandlerJSON)
 	return h(p)
+
+func HandlerTemplate(template Template) Handler {
+	return func(p Problem) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(p.Status())
+			if err := template.Execute(w, p); err != nil {
+				_, _ = w.Write(fmt.Appendf([]byte{}, "Failed to execute problem template: %s\n\nPlease report this error to the site's admin.", err.Error()))
+			}
+		})
+	}
+}
+
+type Template interface {
+	Execute(w io.Writer, data any) error
 }
 
 func HandlerContentType(handlers map[string]Handler, fallback ...Handler) Handler {
