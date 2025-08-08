@@ -23,6 +23,10 @@ import (
 	"forge.capytal.company/loreddev/x/smalltrip/middleware"
 )
 
+type ContextKey string
+
+var DefaultContextKey ContextKey = "x-smalltrip-problems-middleware-handler"
+
 // TODO?: BufferedMiddleware, a middleware which can respond or redirect to
 // a error page even after the first Write
 
@@ -43,7 +47,7 @@ func PanicMiddleware() middleware.Middleware {
 func Middleware(h Handler) middleware.Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), contextKey, h)
+			ctx := context.WithValue(r.Context(), DefaultContextKey, h)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
@@ -52,7 +56,7 @@ func Middleware(h Handler) middleware.Middleware {
 func HandlerMiddleware(fallback ...Handler) Handler {
 	return func(p Problem) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			handler := r.Context().Value(contextKey)
+			handler := r.Context().Value(DefaultContextKey)
 			if h, ok := handler.(Handler); handler != nil && ok {
 				h(p).ServeHTTP(w, r)
 			} else if len(fallback) > 0 {
@@ -61,5 +65,3 @@ func HandlerMiddleware(fallback ...Handler) Handler {
 		})
 	}
 }
-
-var contextKey = "x-smalltrip-problems-middleware-handler"
