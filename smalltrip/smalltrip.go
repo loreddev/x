@@ -20,6 +20,8 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"reflect"
+	"runtime"
 
 	"forge.capytal.company/loreddev/x/smalltrip/middleware"
 	"forge.capytal.company/loreddev/x/smalltrip/multiplexer"
@@ -53,15 +55,25 @@ func NewRouter(options ...Option) Router {
 }
 
 func (router *router) HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request)) {
-	router.Handle(pattern, http.HandlerFunc(handler))
+	log := router.log.With(slog.String("pattern", pattern), slog.String("handler", getValueType(handler)))
+	log.Info("Adding route")
+
+	var hf http.Handler = http.HandlerFunc(handler)
+
+	for _, m := range router.mws {
+		log.Debug("Wrapping with middleware", slog.String("middleware", getValueType(m)))
+		hf = m(hf)
+	}
+
+	router.mux.Handle(pattern, hf)
 }
 
 func (router *router) Handle(pattern string, handler http.Handler) {
-	log := router.log.With(slog.String("pattern", pattern), slog.String("handler", fmt.Sprintf("%T", handler)))
+	log := router.log.With(slog.String("pattern", pattern), slog.String("handler", getValueType(handler)))
 	log.Info("Adding route")
 
 	for _, m := range router.mws {
-		log.Debug("Wrapping with middleware", slog.String("middleware", fmt.Sprintf("%T", m)))
+		log.Debug("Wrapping with middleware", slog.String("middleware", getValueType(m)))
 		handler = m(handler)
 	}
 
@@ -69,7 +81,7 @@ func (router *router) Handle(pattern string, handler http.Handler) {
 }
 
 func (router *router) Use(m middleware.Middleware) {
-	router.log.Info("Middleware added", slog.String("middleware", fmt.Sprintf("%T", m)))
+	router.log.Info("Middleware added", slog.String("middleware", getValueType(m)))
 
 	if router.mws == nil {
 		router.mws = []middleware.Middleware{}
@@ -83,4 +95,31 @@ func (router *router) Handler(r *http.Request) (http.Handler, string) {
 
 func (router *router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	router.mux.ServeHTTP(w, r)
+}
+
+func getValueType[T any](value T) (name string) {
+	defer func() {
+		if rc := recover(); rc != nil {
+			name = fmt.Sprintf("%T", value)
+		}
+	}()
+
+	v := reflect.ValueOf(value)
+
+	if v.Kind() == reflect.Pointer {
+		return getValueType(v.Elem().Interface())
+	}
+
+	if v.Kind() == reflect.Func {
+		fc := runtime.FuncForPC(v.Pointer())
+		if fc != nil {
+			return fc.Name()
+		}
+	}
+
+	if p, n := v.Type().PkgPath(), v.Type().Name(); p != "" && n != "" {
+		return fmt.Sprintf("%s.%s", p, n)
+	}
+
+	return fmt.Sprintf("%T", value)
 }
