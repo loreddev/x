@@ -14,9 +14,12 @@
       nixpkgs.lib.genAttrs systems (system: let
         pkgs = import nixpkgs {inherit system;};
       in
-        f system pkgs);
+        f {
+          inherit (pkgs) lib stdenv;
+          inherit pkgs;
+        });
   in {
-    devShells = forAllSystems (system: pkgs: {
+    devShells = forAllSystems ({pkgs, ...}: {
       default = pkgs.mkShell {
         CGO_ENABLED = "0";
         hardeningDisable = ["all"];
